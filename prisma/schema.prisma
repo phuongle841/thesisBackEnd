@@ -13,28 +13,43 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  title     String   @db.VarChar(255)
-  content   String?
-  published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
+model Product {
+  productId          Int        @id @default(autoincrement())
+  productName        String
+  productImages      String[]
+  productRating      Int
+  productPrice       Float
+  productOrderAmount String?
+  productDescription String
+  productDetails     String
+  productRelatedId   Int
+  productRelated     Product    @relation("Related Products", fields: [productRelatedId], references: [productId])
+  Product            Product[]  @relation("Related Products")
+  Category           Category[]
 }
 
-model Profile {
-  id     Int     @id @default(autoincrement())
-  bio    String?
-  user   User    @relation(fields: [userId], references: [id])
-  userId Int     @unique
+model Category {
+  categoryId          Int       @id @default(autoincrement())
+  categoryImage       String
+  categoryTitle       String
+  categoryDescription String
+  product             Product[]
 }
 
 model User {
-  id      Int      @id @default(autoincrement())
-  email   String   @unique
-  name    String?
-  posts   Post[]
-  profile Profile?
+  userId      Int      @id @default(autoincrement())
+  userEmail   String?  @unique
+  userName    String   @default("")
+  userReviews Review[]
+}
+
+model Review {
+  reviewId          Int    @id @default(autoincrement())
+  reviewName        String
+  reviewTitle       String
+  reviewDescription String
+  reviewRating      Int
+  reviewHelpfulness Int
+  reviewer          User?  @relation(fields: [reviewerId], references: [userId])
+  reviewerId        Int?
 }

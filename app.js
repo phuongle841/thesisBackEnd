@@ -1,3 +1,4 @@
+const routes = require("./routes/index");
 const express = require("express");
 const cors = require("cors");
 
@@ -7,30 +8,13 @@ const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-let users = {
-  1: {
-    id: "1",
-    username: "Robin Wieruch",
-  },
-  2: {
-    id: "2",
-    username: "Dave Davids",
-  },
-};
-
-app.get("/users", (req, res) => {
-  return res.send(users);
-});
-
-app.get("/", (req, res) => {
-  return res.send("Received a GET HTTP method");
-});
-
-app.post("/", (req, res) => {
-  return res.send("Received a POST HTTP method");
-});
+app.use("/categories", routes.categoryRouter);
+app.use("/products", routes.productRouter);
+app.use("/users", routes.userRouter);
+app.use("/", routes.appRouter);
 
 app.listen(PORT, () => {
-  console.log(`My first Express app - listening on port ${PORT}!`);
+  console.log(`Listening on port ${PORT}!`);
 });
