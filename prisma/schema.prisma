@@ -26,6 +26,7 @@ model Product {
   productRelated     Product    @relation("Related Products", fields: [productRelatedId], references: [productId])
   Product            Product[]  @relation("Related Products")
   Category           Category[]
+  Order              Order[]
 }
 
 model Category {
@@ -52,4 +53,10 @@ model Review {
   reviewHelpfulness Int
   reviewer          User?  @relation(fields: [reviewerId], references: [userId])
   reviewerId        Int?
+}
+
+model Order {
+  orderId          Int     @id @default(autoincrement())
+  orderProducts    Product @relation(fields: [productProductId], references: [productId])
+  productProductId Int
 }

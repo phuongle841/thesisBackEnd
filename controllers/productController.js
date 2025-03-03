@@ -1,8 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 module.exports.getProducts = async (req, res) => {
-  const users = await prisma.user.findMany();
-  res.send(users);
+  const products = await prisma.product.findMany();
+  res.send(products);
 };
 module.exports.postProducts = async (req, res) => {
   res.send(req.body);

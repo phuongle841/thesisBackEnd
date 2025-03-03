@@ -12,6 +12,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use("/categories", routes.categoryRouter);
 app.use("/products", routes.productRouter);
+app.use("/search", routes.searchRouter);
 app.use("/users", routes.userRouter);
 app.use("/", routes.appRouter);
 
