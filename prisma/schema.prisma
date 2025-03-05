@@ -22,9 +22,6 @@ model Product {
   productOrderAmount String?
   productDescription String
   productDetails     String
-  productRelatedId   Int
-  productRelated     Product    @relation("Related Products", fields: [productRelatedId], references: [productId])
-  Product            Product[]  @relation("Related Products")
   Category           Category[]
   Order              Order[]
 }
