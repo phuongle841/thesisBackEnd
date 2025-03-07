@@ -38,7 +38,7 @@ async function seedProducts() {
 }
 
 async function main() {
-  await seedProducts();
   await seedCategories();
+  await seedProducts();
 }
 module.exports.main = main;

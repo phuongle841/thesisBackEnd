@@ -9,6 +9,7 @@ module.exports.ProductModel = (data) => {
       productImages: [imgUrl],
       productRating: parseInt(stars),
       productPrice: parseFloat(price),
+      Category: [category_id],
       productDescription: "",
       productDetails: "",
     };

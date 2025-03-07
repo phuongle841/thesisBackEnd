@@ -17,7 +17,7 @@ model Product {
   productId          Int        @id @default(autoincrement())
   productName        String
   productImages      String[]
-  productRating      Int
+  productRating      Int?
   productPrice       Float
   productOrderAmount String?
   productDescription String
