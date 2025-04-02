@@ -22,8 +22,12 @@ model Product {
   productOrderAmount String?
   productDescription String
   productDetails     String
+  history            DateTime[]
   Category           Category[]
   Order              Order[]
+  owner              User       @relation(fields: [userUserId], references: [userId])
+  userUserId         Int
+  Record             Record[]
 }
 
 model Category {
@@ -34,11 +38,21 @@ model Category {
   product             Product[]
 }
 
+model Record {
+  recordId   Int      @id @default(autoincrement())
+  recordTime DateTime
+  belongTo   Product  @relation(fields: [productId], references: [productId])
+  productId  Int
+  quantity   Int
+}
+
 model User {
-  userId      Int      @id @default(autoincrement())
-  userEmail   String?  @unique
-  userName    String   @default("")
+  userId      Int       @id @default(autoincrement())
+  userEmail   String?   @unique
+  password    String
+  userName    String    @default("")
   userReviews Review[]
+  Product     Product[]
 }
 
 model Review {

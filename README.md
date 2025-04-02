@@ -1,0 +1,11 @@
+# EXPRESS + POSTGRESQL
+
+# object:
+
+- validate using JWTs
+- create tables for sale overview
+- integrate prediction function into charts
+- migrate into inventory
+- trending is the most sell in month(30 days)
+
+# suggest some trending

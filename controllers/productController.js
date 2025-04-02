@@ -1,7 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 module.exports.getProducts = async (req, res) => {
-  const products = await prisma.product.findMany({ skip: 1000, take: 30 });
+  const products = await prisma.product.findMany({ take: 30 });
   res.send(products);
 };
 module.exports.getProductById = async (req, res) => {
