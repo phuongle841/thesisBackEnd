@@ -33,9 +33,9 @@ async function seedProducts() {
     })
     .on("end", async () => {
       let result = ProductModel(productData);
-      console.log(result);
+      console.log(result.length);
 
-      // await prisma.product.createMany({ data: result });
+      await prisma.product.createMany({ data: result });
     });
 }
 
