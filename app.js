@@ -13,6 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use("/admin", routes.adminRouter);
 app.use("/categories", routes.categoryRouter);
+app.use("/location", routes.locationRouter);
 app.use("/login", routes.loginRouter);
 app.use("/products", routes.productRouter);
 app.use("/search", routes.searchRouter);

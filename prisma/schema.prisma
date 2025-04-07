@@ -47,12 +47,22 @@ model Record {
 }
 
 model User {
-  userId      Int       @id @default(autoincrement())
-  userEmail   String?   @unique
+  userId      Int        @id @default(autoincrement())
+  userEmail   String?    @unique
   password    String
-  userName    String    @default("")
+  userName    String     @default("")
   userReviews Review[]
   Product     Product[]
+  Location    Location[]
+}
+
+model Location {
+  locationId Int    @id @default(autoincrement())
+  user       User   @relation(fields: [userUserId], references: [userId])
+  userUserId Int
+  address    String
+  postcode   String
+  nation     String
 }
 
 model Review {

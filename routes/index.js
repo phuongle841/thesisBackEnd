@@ -5,6 +5,7 @@ const userRouter = require("./userRouter");
 const searchRouter = require("./searchRouter");
 const loginRouter = require("./loginRouter");
 const adminRouter = require("./adminRouter");
+const locationRouter = require("./locationRouter");
 module.exports = {
   appRouter,
   categoryRouter,
@@ -13,4 +14,5 @@ module.exports = {
   searchRouter,
   loginRouter,
   adminRouter,
+  locationRouter,
 };

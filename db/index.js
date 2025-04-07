@@ -20,7 +20,7 @@ async function seedCategories() {
     })
     .on("end", async () => {
       let result = CategoryModel(CategoryData);
-      await prisma.category.createMany({ data: result });
+      // await prisma.category.createMany({ data: result });
     });
 }
 async function seedProducts() {
@@ -33,12 +33,14 @@ async function seedProducts() {
     })
     .on("end", async () => {
       let result = ProductModel(productData);
-      await prisma.product.createMany({ data: result });
+      console.log(result);
+
+      // await prisma.product.createMany({ data: result });
     });
 }
 
 async function main() {
-  await seedCategories();
+  // await seedCategories();
   await seedProducts();
 }
 module.exports.main = main;

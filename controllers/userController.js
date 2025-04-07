@@ -7,8 +7,19 @@ module.exports.getUsers = async (req, res) => {
 };
 module.exports.postUsers = async (req, res) => {
   const { userEmail, userName } = req.body;
-
   res.json(req.body);
+};
+module.exports.getUser = async (req, res) => {
+  const { userId } = req.params;
+  const user = await prisma.user.findMany();
+  console.log(user);
+  if (user != null) {
+    res.send("this is get user by id");
+  } else res.status(400).json({ error: "Cannot find user" });
+};
+module.exports.getUserReviews = async (req, res) => {
+  const users = await prisma.user.findMany();
+  res.send("this is get user's reviews");
 };
 module.exports.putUsers = async (req, res) => {
   const users = await prisma.user.findMany();

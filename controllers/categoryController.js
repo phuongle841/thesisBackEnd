@@ -7,17 +7,13 @@ const defaultTake = 10;
 module.exports.getCategories = async (req, res) => {
   const { take, skip } = req.query;
 
-  const categories = await prisma.category.findMany({
-    take: take ? parseInt(take) : defaultTake,
-    skip: skip ? parseInt(skip) : defaultSkip,
-  });
+  const categories = await prisma.category.findMany({});
   res.send(categories);
 };
 
 module.exports.getCategoriesById = async (req, res) => {
   const { categoryId } = req.params;
   const { take, skip } = req.query;
-  console.log(categoryId);
 
   const category = await prisma.category.findUnique({
     where: { categoryId: parseInt(categoryId) },

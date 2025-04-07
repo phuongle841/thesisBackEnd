@@ -1,7 +1,7 @@
 const { main } = require("../db");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-ain()
+main()
   .then(async () => {
     await prisma.$disconnect();
   })
