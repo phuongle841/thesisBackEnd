@@ -1,8 +1,7 @@
 const { randomIntFromInterval } = require("../../utils/randomInterval");
 
-module.exports.ProductModel = (data) => {
+module.exports.ProductModel = (data, userId) => {
   let result = [];
-
   for (let i = 0; i < data.length; i++) {
     const { title, imgUrl, stars, price, category_id } = data[i];
     let productImages = [imgUrl];
@@ -20,9 +19,9 @@ module.exports.ProductModel = (data) => {
       productImages: productImages,
       productRating: parseInt(stars),
       productPrice: parseFloat(price),
-      Category: [category_id],
       productDescription: "",
       productDetails: "",
+      userId: userId,
     };
     result.push(input);
   }

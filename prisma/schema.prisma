@@ -22,17 +22,16 @@ model Product {
   productOrderAmount String?
   productDescription String
   productDetails     String
-  history            DateTime[]
   Category           Category[]
   Order              Order[]
-  owner              User       @relation(fields: [userUserId], references: [userId])
-  userUserId         Int
+  owner              User       @relation(fields: [userId], references: [userId])
+  userId             Int
   Record             Record[]
 }
 
 model Category {
   categoryId          Int       @id @default(autoincrement())
-  categoryImage       String
+  categoryImage       String?
   categoryTitle       String
   categoryDescription String
   product             Product[]
@@ -50,7 +49,7 @@ model User {
   userId      Int        @id @default(autoincrement())
   userEmail   String?    @unique
   password    String
-  userName    String     @default("")
+  userName    String
   userReviews Review[]
   Product     Product[]
   Location    Location[]
@@ -58,8 +57,8 @@ model User {
 
 model Location {
   locationId Int    @id @default(autoincrement())
-  user       User   @relation(fields: [userUserId], references: [userId])
-  userUserId Int
+  user       User   @relation(fields: [userId], references: [userId])
+  userId     Int
   address    String
   postcode   String
   nation     String
@@ -72,8 +71,8 @@ model Review {
   reviewDescription String
   reviewRating      Int
   reviewHelpfulness Int
-  reviewer          User?  @relation(fields: [reviewerId], references: [userId])
-  reviewerId        Int?
+  reviewer          User   @relation(fields: [reviewerId], references: [userId])
+  reviewerId        Int
 }
 
 model Order {
