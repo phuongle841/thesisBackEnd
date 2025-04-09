@@ -9,3 +9,7 @@
 - trending is the most sell in month(30 days)
 
 # suggest some trending
+
+# db
+
+- connect prods with categories

@@ -19,6 +19,12 @@ app.use("/products", routes.productRouter);
 app.use("/search", routes.searchRouter);
 app.use("/users", routes.userRouter);
 app.use("/", routes.appRouter);
+app.use((err, req, res, next) => {
+  console.error(err);
+  console.log("error is detect");
+
+  res.status(500).send(err);
+});
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}!`);

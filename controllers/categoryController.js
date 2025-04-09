@@ -7,7 +7,10 @@ const defaultTake = 10;
 module.exports.getCategories = async (req, res) => {
   const { take, skip } = req.query;
 
-  const categories = await prisma.category.findMany({});
+  const categories = await prisma.category.findMany({
+    skip: defaultSkip,
+    take: defaultTake,
+  });
   res.send(categories);
 };
 
