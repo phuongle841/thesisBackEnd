@@ -8,7 +8,8 @@
     "dev": "node --watch app.js"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "updateAndReseed": "npx prisma db push --force-reset && npx prisma db seed"
   },
   "keywords": [],
   "author": "",

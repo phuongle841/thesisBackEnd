@@ -8,11 +8,20 @@ module.exports.login = async (req, res) => {
   const { userEmail, userPassword } = req.body;
   const user = { userEmail, userPassword };
 
-  // this step need verify user
+  try {
+    // this step need verify user
+    // how? get the ideal but don't know implement
+    const userId = await prisma.user.findUnique({
+      where: { userEmail: userEmail },
+      select: { userId: true },
+    });
 
-  jwt.sign({ user }, process.env.secretKey, (err, token) => {
-    res.json({ token });
-  });
+    jwt.sign({ user }, process.env.secretKey, (err, token) => {
+      res.json({ token, userId });
+    });
+  } catch (error) {
+    res.json(error);
+  }
 };
 
 module.exports.checkToken = async (req, res, next) => {
@@ -21,7 +30,6 @@ module.exports.checkToken = async (req, res, next) => {
     if (err) {
       res.sendStatus(403);
     } else {
-      console.log(authData);
       res.json({ content: "this is the secret of the universe", authData });
     }
   });

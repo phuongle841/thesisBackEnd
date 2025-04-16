@@ -1,22 +1,29 @@
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, Prisma } = require("@prisma/client");
+const fs = require("fs");
+const parse = require("csv-parser");
+
 const { randomIntFromInterval } = require("../utils/randomInterval");
+const path = require("path");
+const { ReviewModel } = require("./modelFacade/Review");
+
 const prisma = new PrismaClient();
-async function seedProducts() {
-  // const connect = [1, 2, 3].map((i) => {
-  //   return { categoryId: i };
-  // });
-  // const product = await prisma.product.update({
-  //   where: { productId: 9001 },
-  //   data: { Category: { connect: connect } },
-  // });
-  const product = await prisma.product.findUnique({
-    where: { productId: 9001 },
-    include: { Category: { select: { categoryId: true } } },
-  });
-  console.log(product);
+const reviewFile = path.resolve(__dirname, "./archive/fake_reviews.csv");
+
+async function testFunction() {
+  var ReviewData = [];
+
+  fs.createReadStream(reviewFile)
+    .pipe(parse({ delimiter: ":" }))
+    .on("data", function (csvRow) {
+      ReviewData.push(csvRow);
+    })
+    .on("end", async () => {
+      let result = ReviewModel(ReviewData);
+      await prisma.review.createMany({ data: result });
+    });
 }
 
 async function main() {
-  await seedProducts();
+  await testFunction();
 }
 main();

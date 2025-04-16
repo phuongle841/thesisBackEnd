@@ -27,6 +27,16 @@ model Product {
   owner              User       @relation(fields: [userId], references: [userId])
   userId             Int
   Record             Record[]
+  reviewed           Review[]
+  Cart               Cart?      @relation(fields: [cartCartId], references: [cartId])
+  cartCartId         Int?
+}
+
+model Cart {
+  cartId      Int       @id @default(autoincrement())
+  userId      Int
+  owner       User      @relation(fields: [userId], references: [userId])
+  productList Product[]
 }
 
 model Category {
@@ -46,13 +56,16 @@ model Record {
 }
 
 model User {
-  userId      Int        @id @default(autoincrement())
-  userEmail   String?    @unique
-  password    String
-  userName    String
-  userReviews Review[]
-  Product     Product[]
-  Location    Location[]
+  userId            Int        @id @default(autoincrement())
+  userEmail         String?    @unique
+  password          String
+  userName          String
+  userAvatarUrl     String?
+  userBackgroundUrl String?
+  userReviews       Review[]
+  Product           Product[]
+  Location          Location[]
+  Cart              Cart[]
 }
 
 model Location {
@@ -65,14 +78,15 @@ model Location {
 }
 
 model Review {
-  reviewId          Int    @id @default(autoincrement())
-  reviewName        String
+  reviewId          Int     @id @default(autoincrement())
   reviewTitle       String
   reviewDescription String
   reviewRating      Int
-  reviewHelpfulness Int
-  reviewer          User   @relation(fields: [reviewerId], references: [userId])
+  reviewHelpfulness Int?
+  reviewer          User    @relation(fields: [reviewerId], references: [userId])
   reviewerId        Int
+  product           Product @relation(fields: [productId], references: [productId])
+  productId         Int
 }
 
 model Order {

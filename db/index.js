@@ -8,41 +8,66 @@ const { CategoryModel } = require("./modelFacade/Category");
 const { ProductModel } = require("./modelFacade/Product");
 const path = require("path");
 const { UserModel } = require("./modelFacade/User");
+const { ReviewModel } = require("./modelFacade/Review");
 const { randomIntFromInterval } = require("../utils/randomInterval");
 
 const prisma = new PrismaClient();
-const productFile = path.resolve(__dirname, "./amazon_products.csv");
-const CategoryFile = path.resolve(__dirname, "./amazon_categories.csv");
+const productFile = path.resolve(__dirname, "./archive/amazon_products.csv");
+const CategoryFile = path.resolve(__dirname, "./archive/amazon_categories.csv");
+const reviewFile = path.resolve(__dirname, "./archive/fake_reviews.csv");
 
 async function seedCategories() {
-  var CategoryData = [];
-
-  fs.createReadStream(CategoryFile)
-    .pipe(parse({ delimiter: ":" }))
-    .on("data", function (csvRow) {
-      CategoryData.push(csvRow);
-    })
-    .on("end", async () => {
-      let result = CategoryModel(CategoryData);
-      await prisma.category.createMany({ data: result });
-    });
+  return new Promise((resolve, reject) => {
+    console.log("seeding categories");
+    const CategoryData = [];
+    fs.createReadStream(CategoryFile)
+      .pipe(parse({ delimiter: ":" }))
+      .on("data", (csvRow) => {
+        CategoryData.push(csvRow);
+      })
+      .on("end", async () => {
+        try {
+          const result = CategoryModel(CategoryData);
+          await prisma.category.createMany({ data: result });
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      })
+      .on("error", reject);
+  });
 }
-async function seedProducts() {
-  var productData = [];
 
-  fs.createReadStream(productFile)
-    .pipe(parse({ delimiter: ":" }))
-    .on("data", function (csvRow) {
-      productData.push(csvRow);
-    })
-    .on("end", async () => {
-      const { userId } = await prisma.user.findFirst({});
-      let result = ProductModel(productData, userId);
-      await prisma.product.createMany({ data: result });
-    });
+async function seedProducts() {
+  return new Promise((resolve, reject) => {
+    console.log("seeding products");
+    const productData = [];
+
+    fs.createReadStream(productFile)
+      .pipe(parse({ delimiter: ":" }))
+      .on("data", (csvRow) => {
+        productData.push(csvRow);
+      })
+      .on("end", async () => {
+        try {
+          const user = await prisma.user.findFirst({});
+          if (!user) {
+            throw new Error("No user found to associate with products.");
+          }
+          const result = ProductModel(productData, user.userId);
+          await prisma.product.createMany({ data: result });
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      })
+      .on("error", reject);
+  });
 }
 
 async function seedUser() {
+  console.log("seeding user 1(one)");
+
   const userEmail = process.env.userEmail;
   const password = process.env.password;
   const userName = process.env.user;
@@ -56,7 +81,31 @@ async function seedUser() {
   const user = await prisma.user.createMany({ data: result });
 }
 
+async function seedReviews() {
+  return new Promise((resolve, reject) => {
+    console.log("seeding reviews");
+    var ReviewData = [];
+
+    fs.createReadStream(reviewFile)
+      .pipe(parse({ delimiter: ":" }))
+      .on("data", function (csvRow) {
+        ReviewData.push(csvRow);
+      })
+      .on("end", async () => {
+        try {
+          let result = ReviewModel(ReviewData);
+          await prisma.review.createMany({ data: result });
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
+  });
+}
+
 async function updateProductCategoryRelationship() {
+  console.log("update product and category relationship");
+
   const productsWithOutCategory = await prisma.product.findMany({
     where: { Category: { none: {} } },
     select: { productId: true },
@@ -80,7 +129,8 @@ async function updateProductCategoryRelationship() {
     }
     data.push({ productId, connect });
   }
-  for (const element of data) {
+  for (let i = 0; i < data.length; i++) {
+    const element = data[i];
     await prisma.product.update({
       where: { productId: element.productId },
       data: { Category: { connect: element.connect } },
@@ -88,7 +138,9 @@ async function updateProductCategoryRelationship() {
   }
 }
 
-async function updateProductImage() {
+async function updateCategoryImage() {
+  console.log("update category's image");
+
   const result = await prisma.category.findMany({
     select: {
       categoryId: true,
@@ -99,12 +151,16 @@ async function updateProductImage() {
       },
     },
   });
-  const imageList = result.map((element) => {
-    const { product, categoryId } = element;
-    const { productImages, productId } = product[0];
-    const categoryImage = productImages[0];
-    return { categoryImage, categoryId };
-  });
+  const imageList = result
+    .filter(
+      ({ product }) => product.length > 0 && product[0].productImages.length > 0
+    )
+    .map((element) => {
+      const { product, categoryId } = element;
+      const { productImages, productId } = product[0];
+      const categoryImage = productImages[0];
+      return { categoryImage, categoryId };
+    });
   for (const category of imageList) {
     const result = await prisma.category.update({
       where: { categoryId: category.categoryId },
@@ -112,13 +168,30 @@ async function updateProductImage() {
     });
   }
 }
+async function seedCartItem() {
+  console.log("update cart items");
 
+  const cartItems = [];
+  const products = await prisma.product.findMany({
+    skip: 10,
+    take: 5,
+    select: { productId: true },
+  });
+  const { userId } = await prisma.user.findFirst({ select: { userId: true } });
+  const cart = await prisma.cart.create({
+    data: { userId: userId, productList: { connect: products } },
+  });
+}
 async function main() {
-  // await seedUser();
-  // await seedCategories();
-  // await seedProducts();
-  // await updateProductCategoryRelationship();
-  await updateProductImage();
+  await seedUser();
+  await seedCategories();
+  await seedProducts();
+  await updateProductCategoryRelationship();
+  await updateCategoryImage();
+  await seedReviews();
+  console.log("why's it not working");
+
+  await seedCartItem();
 }
 
 // update both schema and prisma client:npx prisma migrate dev
