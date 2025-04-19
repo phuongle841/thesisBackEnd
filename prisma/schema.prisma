@@ -23,13 +23,12 @@ model Product {
   productDescription String
   productDetails     String
   Category           Category[]
-  Order              Order[]
   owner              User       @relation(fields: [userId], references: [userId])
   userId             Int
   Record             Record[]
   reviewed           Review[]
-  Cart               Cart?      @relation(fields: [cartCartId], references: [cartId])
-  cartCartId         Int?
+  Cart               Cart?      @relation(fields: [cartId], references: [cartId])
+  cartId             Int?
 }
 
 model Cart {
@@ -47,14 +46,6 @@ model Category {
   product             Product[]
 }
 
-model Record {
-  recordId   Int      @id @default(autoincrement())
-  recordTime DateTime
-  belongTo   Product  @relation(fields: [productId], references: [productId])
-  productId  Int
-  quantity   Int
-}
-
 model User {
   userId            Int        @id @default(autoincrement())
   userEmail         String?    @unique
@@ -66,15 +57,16 @@ model User {
   Product           Product[]
   Location          Location[]
   Cart              Cart[]
+  Order             Order[]
 }
 
 model Location {
-  locationId Int    @id @default(autoincrement())
-  user       User   @relation(fields: [userId], references: [userId])
+  locationId Int     @id @default(autoincrement())
   userId     Int
+  user       User    @relation(fields: [userId], references: [userId])
   address    String
-  postcode   String
-  nation     String
+  postcode   String?
+  nation     String?
 }
 
 model Review {
@@ -90,7 +82,20 @@ model Review {
 }
 
 model Order {
-  orderId          Int     @id @default(autoincrement())
-  orderProducts    Product @relation(fields: [productProductId], references: [productId])
-  productProductId Int
+  orderId           Int       @id @default(autoincrement())
+  orderDate         DateTime  @default(now())
+  orderDeliveryDate DateTime?
+  orderPaymentDate  DateTime?
+  UserId            Int
+  owner             User      @relation(fields: [UserId], references: [userId])
+  orderRecord       Record[]
+}
+
+model Record {
+  recordId      Int     @id @default(autoincrement())
+  ProductId     Int
+  recordProduct Product @relation(fields: [ProductId], references: [productId])
+  quantity      Int
+  Order         Order?  @relation(fields: [OrderId], references: [orderId])
+  OrderId       Int?
 }

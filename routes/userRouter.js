@@ -7,11 +7,13 @@ const verifyToken = require("../middlewares/verifyToken");
 userRouter.get("/", userController.getUsers);
 userRouter.get("/authenticate", verifyToken, userController.getUserByToken);
 userRouter.get("/:userId", userController.getUser);
-userRouter.put("/:userId", userController.putUsers);
 userRouter.get("/:userId/cart", verifyToken, userController.getUserCart);
+userRouter.get("/:userId/order", verifyToken, userController.getUserOrders);
 userRouter.get("/:userId/reviews", userController.getUserReviews);
+
 userRouter.delete("/:userId", userController.deleteUsers);
 
+userRouter.put("/:userId/cart", verifyToken, userController.putUserCart);
 userRouter.post("/", userController.postUsers);
 
 module.exports = userRouter;

@@ -189,8 +189,6 @@ async function main() {
   await updateProductCategoryRelationship();
   await updateCategoryImage();
   await seedReviews();
-  console.log("why's it not working");
-
   await seedCartItem();
 }
 
