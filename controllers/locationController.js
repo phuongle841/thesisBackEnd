@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 module.exports.getLocation = async (req, res) => {
   const result = { location: "NewYork" };
   const { authData } = req;
-  console.log(authData);
+  const location = await prisma.location.findFirst({});
 
   res.json(result);
 };

@@ -1,26 +1,41 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-module.exports.getProducts = async (req, res) => {
-  const products = await prisma.product.findMany({ take: 30 });
-  res.send(products);
+module.exports.getProducts = async (req, res, next) => {
+  try {
+    const products = await prisma.product.findMany({ take: 30 });
+    res.send(products);
+  } catch (error) {
+    res.sendStatus(404);
+    next(error);
+  }
 };
-module.exports.getProductById = async (req, res) => {
+module.exports.getProductById = async (req, res, next) => {
   const { productId } = req.params;
-  const product = await prisma.product.findUnique({
-    where: { productId: parseInt(productId) },
-    include: { Category: true },
-  });
-  res.send(product);
+  try {
+    const product = await prisma.product.findUnique({
+      where: { productId: parseInt(productId) },
+      include: { Category: true },
+    });
+    res.send(product);
+  } catch (error) {
+    res.sendStatus(404);
+    next(error);
+  }
 };
-module.exports.getProductsByCategory = async (req, res) => {
+module.exports.getProductsByCategory = async (req, res, next) => {
   const { categoryId } = req.params;
-  const products = await prisma.category.findMany({
-    where: { categoryId: categoryId },
-    include: { product: true },
-  });
-  res.send(products);
+  try {
+    const products = await prisma.category.findMany({
+      where: { categoryId: categoryId },
+      include: { product: true },
+    });
+    res.send(products);
+  } catch (error) {
+    res.sendStatus(404);
+    next(error);
+  }
 };
-module.exports.postProducts = async (req, res) => {
+module.exports.postProducts = async (req, res, next) => {
   const {
     productName,
     productImages,
@@ -30,29 +45,44 @@ module.exports.postProducts = async (req, res) => {
     productDetails,
   } = req.body;
   productRating = 5;
-  let result = await prisma.product.create({
-    data: {
-      productName: productName,
-      productImages: productImages,
-      productRating: null,
-      productPrice: productPrice,
-      productDescription: productDescription,
-      productDetails: productDetails,
-    },
-  });
-  res.send(result);
+  try {
+    let result = await prisma.product.create({
+      data: {
+        productName: productName,
+        productImages: productImages,
+        productRating: null,
+        productPrice: productPrice,
+        productDescription: productDescription,
+        productDetails: productDetails,
+      },
+    });
+    res.send(result);
+  } catch (error) {
+    res.sendStatus(404);
+    next(error);
+  }
 };
-module.exports.putProducts = async (req, res) => {
+module.exports.putProducts = async (req, res, next) => {
   const { productId } = req.params;
   const { data } = req.body;
-  const user = await prisma.user.update({
-    where: { productId: productId },
-    data: { data },
-  });
-  res.send(user);
+  try {
+    const user = await prisma.user.update({
+      where: { productId: productId },
+      data: { data },
+    });
+    res.send(user);
+  } catch (error) {
+    res.sendStatus(404);
+    next(error);
+  }
 };
-module.exports.deleteProducts = async (req, res) => {
+module.exports.deleteProducts = async (req, res, next) => {
   const { productId } = req.params;
-  const users = await prisma.user.delete({ where: { productId: productId } });
-  res.send(users);
+  try {
+    const users = await prisma.user.delete({ where: { productId: productId } });
+    res.send(users);
+  } catch (error) {
+    res.sendStatus(404);
+    next(error);
+  }
 };

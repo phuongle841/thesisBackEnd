@@ -11,9 +11,11 @@ userRouter.get("/:userId/cart", verifyToken, userController.getUserCart);
 userRouter.get("/:userId/order", verifyToken, userController.getUserOrders);
 userRouter.get("/:userId/reviews", userController.getUserReviews);
 
-userRouter.delete("/:userId", userController.deleteUsers);
-
 userRouter.put("/:userId/cart", verifyToken, userController.putUserCart);
+
+userRouter.post("/:userid/order", verifyToken, userController.postUserOrder);
 userRouter.post("/", userController.postUsers);
+
+userRouter.delete("/:userId", userController.deleteUsers);
 
 module.exports = userRouter;

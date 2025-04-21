@@ -168,6 +168,7 @@ async function updateCategoryImage() {
     });
   }
 }
+
 async function seedCartItem() {
   console.log("update cart items");
 
@@ -177,11 +178,68 @@ async function seedCartItem() {
     take: 5,
     select: { productId: true },
   });
-  const { userId } = await prisma.user.findFirst({ select: { userId: true } });
-  const cart = await prisma.cart.create({
-    data: { userId: userId, productList: { connect: products } },
+  const userId = await prisma.user.findFirst({ select: { userId: true } });
+
+  const cartRecordIds = [];
+  for (let i = 0; i < products.length; i++) {
+    const element = products[i];
+    const quantity = parseInt(randomIntFromInterval(3, 10));
+    try {
+      const cartRecordId = await prisma.cartRecord.create({
+        data: {
+          recordProduct: { connect: { ...element } },
+          quantity: quantity,
+        },
+        select: { recordId: true },
+      });
+      cartRecordIds.push(cartRecordId);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  if (cartRecordIds.length != 0) {
+    try {
+      const cart = await prisma.cart.create({
+        data: {
+          user: { connect: { userId: userId.userId } },
+          cartRecord: { connect: cartRecordIds },
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+}
+
+// location before order in business logic
+async function seedLocation() {
+  console.log("Seeding location");
+
+  const result = await prisma.location.create({
+    data: { userId: 1, address: "141 West Glen home Ave.Bronx, NY 10473" },
   });
 }
+
+async function seedOrder() {
+  console.log("//todo Seeding order");
+  // problem if the cart also need quantity,
+  // then there are 2 record as the same time
+  //
+  const testArray = [
+    { productId: 1, quantity: 1 },
+    { productId: 1, quantity: 1 },
+    { productId: 1, quantity: 1 },
+    { productId: 1, quantity: 1 },
+  ];
+  try {
+    const result = await prisma.record.createMany({
+      data: [{ recordProduct: { connect: { productId: 1 } }, quantity: 1 }],
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 async function main() {
   await seedUser();
   await seedCategories();
@@ -190,6 +248,7 @@ async function main() {
   await updateCategoryImage();
   await seedReviews();
   await seedCartItem();
+  await seedLocation();
 }
 
 // update both schema and prisma client:npx prisma migrate dev

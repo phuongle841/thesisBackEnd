@@ -14,7 +14,7 @@ datasource db {
 }
 
 model Product {
-  productId          Int        @id @default(autoincrement())
+  productId          Int           @id @default(autoincrement())
   productName        String
   productImages      String[]
   productRating      Int?
@@ -23,19 +23,27 @@ model Product {
   productDescription String
   productDetails     String
   Category           Category[]
-  owner              User       @relation(fields: [userId], references: [userId])
   userId             Int
-  Record             Record[]
+  owner              User          @relation(fields: [userId], references: [userId])
+  OrderRecord        OrderRecord[]
   reviewed           Review[]
-  Cart               Cart?      @relation(fields: [cartId], references: [cartId])
-  cartId             Int?
+  CartRecord         CartRecord[]
 }
 
 model Cart {
-  cartId      Int       @id @default(autoincrement())
-  userId      Int
-  owner       User      @relation(fields: [userId], references: [userId])
-  productList Product[]
+  cartId     Int          @id @default(autoincrement())
+  user       User         @relation(fields: [userId], references: [userId])
+  userId     Int          @unique
+  cartRecord CartRecord[]
+}
+
+model CartRecord {
+  recordId      Int     @id @default(autoincrement())
+  ProductId     Int
+  recordProduct Product @relation(fields: [ProductId], references: [productId])
+  quantity      Int
+  Cart          Cart?   @relation(fields: [cartCartId], references: [cartId])
+  cartCartId    Int?
 }
 
 model Category {
@@ -56,8 +64,9 @@ model User {
   userReviews       Review[]
   Product           Product[]
   Location          Location[]
-  Cart              Cart[]
+  Cart              Cart?
   Order             Order[]
+  CartId            Int?
 }
 
 model Location {
@@ -82,16 +91,16 @@ model Review {
 }
 
 model Order {
-  orderId           Int       @id @default(autoincrement())
-  orderDate         DateTime  @default(now())
+  orderId           Int           @id @default(autoincrement())
+  orderDate         DateTime      @default(now())
   orderDeliveryDate DateTime?
   orderPaymentDate  DateTime?
   UserId            Int
-  owner             User      @relation(fields: [UserId], references: [userId])
-  orderRecord       Record[]
+  owner             User          @relation(fields: [UserId], references: [userId])
+  orderRecord       OrderRecord[]
 }
 
-model Record {
+model OrderRecord {
   recordId      Int     @id @default(autoincrement())
   ProductId     Int
   recordProduct Product @relation(fields: [ProductId], references: [productId])

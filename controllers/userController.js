@@ -21,11 +21,6 @@ module.exports.getUserByToken = async (req, res, next) => {
   }
 };
 
-module.exports.postUsers = async (req, res) => {
-  const { userEmail, userName } = req.body;
-  res.json(req.body);
-};
-
 module.exports.getUser = async (req, res) => {
   const { userId } = req.params;
   const user = await prisma.user.findMany({
@@ -40,11 +35,15 @@ module.exports.getUserCart = async (req, res, next) => {
   const { userId } = req.params;
   try {
     const cart = await prisma.cart.findFirst({
-      where: { owner: { userId: parseInt(userId) } },
+      where: { user: { userId: parseInt(userId) } },
       select: {
         cartId: true,
-        productList: {
-          select: { productId: true, productName: true, productImages: true },
+        cartRecord: {
+          select: {
+            recordId: true,
+            quantity: true,
+            recordProduct: true,
+          },
         },
       },
     });
@@ -88,29 +87,73 @@ module.exports.putUsers = async (req, res) => {
 module.exports.putUserCart = async (req, res, next) => {
   const userId = req.params.userId;
   const { data } = req.body;
-  console.log(data);
 
   try {
-    const { cartId, productList } = await prisma.cart.findFirst({
-      select: {
-        cartId: true,
-        productList: { select: { productId: true } },
-      },
-    });
-    const connectList = data.map((e) => {
-      return { productId: e };
+    const { Cart } = await prisma.user.findUnique({
+      where: { userId: parseInt(userId) },
+      select: { Cart: { select: { cartId: true } } },
     });
 
-    const result = await prisma.cart.update({
-      where: { cartId: cartId },
-      // just set and drop
-      data: { productList: { set: connectList } },
+    const { cartRecord } = await prisma.cart.findUnique({
+      where: { ...Cart },
+      select: {
+        cartRecord: {
+          select: { recordId: true, ProductId: true, quantity: true },
+        },
+      },
     });
+
+    const added = data.filter((element, index, array) => {
+      const result = cartRecord.find((e, i, a) => {
+        return e.ProductId == element.ProductId;
+      });
+      if (result == undefined) {
+        return element;
+      } else {
+        return undefined;
+      }
+    });
+
+    const changed = data.filter((element, index, array) => {
+      const result = cartRecord.find((e, i, a) => {
+        return e.ProductId == element.ProductId;
+      });
+      return result;
+    });
+
+    const removed = cartRecord.filter((element, index, array) => {
+      const result = data.find((e, i, a) => {
+        return e.ProductId == element.ProductId;
+      });
+      if (result == undefined) {
+        return element;
+      } else {
+        return undefined;
+      }
+    });
+
+    console.log("changed:\n", changed);
+    console.log("added:\n", added);
+    console.log("removed:\n", removed);
+
+    // add => create new record
+    // removed => remove connect
+    // changed => update
+
     res.send({ message: "success to update" });
   } catch (error) {
     console.log(error);
     res.send("failed to update");
   }
+};
+
+module.exports.postUserOrder = async (req, res) => {
+  res.json({ message: "posting order" });
+};
+
+module.exports.postUsers = async (req, res) => {
+  const { userEmail, userName } = req.body;
+  res.json(req.body);
 };
 
 module.exports.deleteUsers = async (req, res) => {
@@ -119,7 +162,7 @@ module.exports.deleteUsers = async (req, res) => {
     where: { userId: parseInt(userId) },
   });
   if (userExisted) {
-    return res.status("400").json({ error: "User already existed" });
+    return res.status("404").json({ error: "User already existed" });
   }
   res.json(user);
 };
