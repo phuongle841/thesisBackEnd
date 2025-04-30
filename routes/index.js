@@ -7,6 +7,7 @@ const loginRouter = require("./loginRouter");
 const adminRouter = require("./adminRouter");
 const locationRouter = require("./locationRouter");
 const cartRouter = require("./cartRouter");
+const orderRouter = require("./orderRouter");
 module.exports = {
   appRouter,
   categoryRouter,
@@ -17,4 +18,5 @@ module.exports = {
   adminRouter,
   locationRouter,
   cartRouter,
+  orderRouter,
 };

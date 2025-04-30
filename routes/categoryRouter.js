@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const categoriesController = require("../controllers/categoryController");
 const categoryRouter = Router({ mergeParams: true });
+// http://localhost:3000/categories
 categoryRouter.get("/", categoriesController.getCategories);
 categoryRouter.get("/:categoryId", categoriesController.getCategoriesById);
 categoryRouter.post("/", categoriesController.postCategories);

@@ -69,13 +69,18 @@ async function seedUser() {
   console.log("seeding user 1(one)");
 
   const userEmail = process.env.userEmail;
-  const password = process.env.password;
   const userName = process.env.user;
+  const password = process.env.password;
+  const userBackgroundUrl = process.env.userBackgroundUrl;
+  const userAvatarUrl = process.env.userAvatarUrl;
+
   let result = UserModel([
     {
       userEmail,
       password,
       userName,
+      userBackgroundUrl,
+      userAvatarUrl,
     },
   ]);
   const user = await prisma.user.createMany({ data: result });
@@ -172,42 +177,30 @@ async function updateCategoryImage() {
 async function seedCartItem() {
   console.log("update cart items");
 
-  const cartItems = [];
   const products = await prisma.product.findMany({
     skip: 10,
     take: 5,
     select: { productId: true },
   });
-  const userId = await prisma.user.findFirst({ select: { userId: true } });
 
-  const cartRecordIds = [];
-  for (let i = 0; i < products.length; i++) {
-    const element = products[i];
-    const quantity = parseInt(randomIntFromInterval(3, 10));
-    try {
-      const cartRecordId = await prisma.cartRecord.create({
-        data: {
-          recordProduct: { connect: { ...element } },
-          quantity: quantity,
-        },
-        select: { recordId: true },
-      });
-      cartRecordIds.push(cartRecordId);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-  if (cartRecordIds.length != 0) {
-    try {
-      const cart = await prisma.cart.create({
-        data: {
-          user: { connect: { userId: userId.userId } },
-          cartRecord: { connect: cartRecordIds },
-        },
-      });
-    } catch (error) {
-      console.log(error);
-    }
+  const userId = await prisma.user.findFirst({ select: { userId: true } });
+  // timeout since one user one cart
+
+  try {
+    const { cartId } = await prisma.cart.upsert({
+      where: { ...userId },
+      update: {},
+      create: { ...userId },
+    });
+    const data = products.map((e) => {
+      const CartId = cartId;
+      const ProductId = e.productId;
+      const quantity = randomIntFromInterval(3, 10);
+      return { CartId, ProductId, quantity };
+    });
+    const result = await prisma.cartRecord.createMany({ data: data });
+  } catch (error) {
+    console.log(error);
   }
 }
 
@@ -221,19 +214,26 @@ async function seedLocation() {
 }
 
 async function seedOrder() {
-  console.log("//todo Seeding order");
-  // problem if the cart also need quantity,
-  // then there are 2 record as the same time
-  //
-  const testArray = [
-    { productId: 1, quantity: 1 },
-    { productId: 1, quantity: 1 },
-    { productId: 1, quantity: 1 },
-    { productId: 1, quantity: 1 },
-  ];
+  console.log("update order items");
+
+  const products = await prisma.product.findMany({
+    skip: 0,
+    take: 5,
+    select: { productId: true },
+  });
+  const orderRecords = products.map((e) => {
+    return { ProductId: e.productId, quantity: 1 };
+  });
+  const userId = await prisma.user.findFirst({ select: { userId: true } });
+
   try {
-    const result = await prisma.record.createMany({
-      data: [{ recordProduct: { connect: { productId: 1 } }, quantity: 1 }],
+    const order = await prisma.order.create({
+      data: {
+        owner: { connect: userId },
+        orderRecord: {
+          create: orderRecords,
+        },
+      },
     });
   } catch (error) {
     console.log(error);
@@ -249,6 +249,7 @@ async function main() {
   await seedReviews();
   await seedCartItem();
   await seedLocation();
+  await seedOrder();
 }
 
 // update both schema and prisma client:npx prisma migrate dev

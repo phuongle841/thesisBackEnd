@@ -34,16 +34,18 @@ model Cart {
   cartId     Int          @id @default(autoincrement())
   user       User         @relation(fields: [userId], references: [userId])
   userId     Int          @unique
+  updateTime DateTime     @default(now())
   cartRecord CartRecord[]
 }
 
 model CartRecord {
-  recordId      Int     @id @default(autoincrement())
   ProductId     Int
   recordProduct Product @relation(fields: [ProductId], references: [productId])
+  Cart          Cart    @relation(fields: [CartId], references: [cartId])
+  CartId        Int
   quantity      Int
-  Cart          Cart?   @relation(fields: [cartCartId], references: [cartId])
-  cartCartId    Int?
+
+  @@id([CartId, ProductId])
 }
 
 model Category {
@@ -66,7 +68,6 @@ model User {
   Location          Location[]
   Cart              Cart?
   Order             Order[]
-  CartId            Int?
 }
 
 model Location {
@@ -79,14 +80,15 @@ model Location {
 }
 
 model Review {
-  reviewId          Int     @id @default(autoincrement())
+  reviewId          Int      @id @default(autoincrement())
   reviewTitle       String
   reviewDescription String
+  reviewDate        DateTime @default(now())
   reviewRating      Int
   reviewHelpfulness Int?
-  reviewer          User    @relation(fields: [reviewerId], references: [userId])
+  reviewer          User     @relation(fields: [reviewerId], references: [userId])
   reviewerId        Int
-  product           Product @relation(fields: [productId], references: [productId])
+  product           Product  @relation(fields: [productId], references: [productId])
   productId         Int
 }
 
@@ -95,16 +97,25 @@ model Order {
   orderDate         DateTime      @default(now())
   orderDeliveryDate DateTime?
   orderPaymentDate  DateTime?
+  paid              Boolean       @default(false)
+  orderStatus       OrderStatus   @default(PREPARED)
   UserId            Int
   owner             User          @relation(fields: [UserId], references: [userId])
   orderRecord       OrderRecord[]
 }
 
 model OrderRecord {
-  recordId      Int     @id @default(autoincrement())
   ProductId     Int
   recordProduct Product @relation(fields: [ProductId], references: [productId])
-  quantity      Int
-  Order         Order?  @relation(fields: [OrderId], references: [orderId])
-  OrderId       Int?
+  Order         Order   @relation(fields: [OrderId], references: [orderId])
+  OrderId       Int
+  quantity      Int     @default(1)
+
+  @@id([OrderId, ProductId])
+}
+
+enum OrderStatus {
+  PREPARED
+  SHIPPING
+  DONE
 }

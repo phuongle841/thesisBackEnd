@@ -1,10 +1,14 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const jwt = require("jsonwebtoken");
+
 module.exports.getUsers = async (req, res) => {
   const { userid, userEmail, userName } = req.query;
-  const users = await prisma.user.findMany();
-  res.send(users);
+  try {
+    const users = await prisma.user.findMany();
+    res.send(users);
+  } catch (error) {
+    res.error(error);
+  }
 };
 
 module.exports.getUserByToken = async (req, res, next) => {
@@ -23,12 +27,15 @@ module.exports.getUserByToken = async (req, res, next) => {
 
 module.exports.getUser = async (req, res) => {
   const { userId } = req.params;
-  const user = await prisma.user.findMany({
-    where: { userId: parseInt(userId) },
-  });
-  if (user != null) {
-    res.send("this is get user by id");
-  } else res.status(400).json({ error: "Cannot find user" });
+  try {
+    const user = await prisma.user.findFirst({
+      where: { userId: parseInt(userId) },
+      include: { userReviews: true, Location: true },
+    });
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ error: "Cannot find user" });
+  }
 };
 
 module.exports.getUserCart = async (req, res, next) => {
@@ -40,7 +47,6 @@ module.exports.getUserCart = async (req, res, next) => {
         cartId: true,
         cartRecord: {
           select: {
-            recordId: true,
             quantity: true,
             recordProduct: true,
           },
@@ -56,11 +62,11 @@ module.exports.getUserCart = async (req, res, next) => {
 module.exports.getUserOrders = async (req, res, next) => {
   const { userId } = req.params;
   try {
-    const user = await prisma.user.findUnique({
-      where: { userId: parseInt(userId) },
-      select: { userReviews: true },
+    const orders = await prisma.order.findMany({
+      where: { owner: { userId: parseInt(userId) } },
+      include: { orderRecord: { include: { recordProduct: true } } },
     });
-    res.send(user);
+    res.send(orders);
   } catch (error) {
     next(error);
   }
@@ -98,65 +104,112 @@ module.exports.putUserCart = async (req, res, next) => {
       where: { ...Cart },
       select: {
         cartRecord: {
-          select: { recordId: true, ProductId: true, quantity: true },
+          select: { ProductId: true, quantity: true },
         },
       },
     });
 
-    const added = data.filter((element, index, array) => {
-      const result = cartRecord.find((e, i, a) => {
-        return e.ProductId == element.ProductId;
+    const added = data.filter(
+      (element) =>
+        !cartRecord.some(
+          (item) => item.ProductId == element.recordProduct.productId
+        )
+    );
+
+    const changed = data.filter((element) =>
+      cartRecord.some(
+        (item) => item.ProductId == element.recordProduct.productId
+      )
+    );
+
+    const removed = cartRecord.filter(
+      (element) =>
+        !data.some((item) => item.recordProduct.productId == element.ProductId)
+    );
+
+    for (let i = 0; i < changed.length; i++) {
+      const element = changed[i];
+      const { recordProduct, quantity } = element;
+      const { productId } = recordProduct;
+
+      const CartId = Cart.cartId;
+
+      const result = await prisma.cartRecord.update({
+        where: {
+          CartId_ProductId: {
+            CartId: CartId,
+            ProductId: recordProduct.productId,
+          },
+        },
+        data: { quantity: quantity },
       });
-      if (result == undefined) {
-        return element;
-      } else {
-        return undefined;
-      }
-    });
+    }
 
-    const changed = data.filter((element, index, array) => {
-      const result = cartRecord.find((e, i, a) => {
-        return e.ProductId == element.ProductId;
+    for (let i = 0; i < added.length; i++) {
+      const element = added[i];
+      const { recordProduct, quantity } = element;
+
+      const CartId = Cart.cartId;
+      const result = await prisma.cartRecord.upsert({
+        where: {
+          CartId_ProductId: {
+            CartId: CartId,
+            ProductId: recordProduct.productId,
+          },
+        },
+        update: { quantity },
+        create: { CartId, ProductId: recordProduct.productId, quantity },
       });
-      return result;
-    });
+    }
 
-    const removed = cartRecord.filter((element, index, array) => {
-      const result = data.find((e, i, a) => {
-        return e.ProductId == element.ProductId;
+    for (let i = 0; i < removed.length; i++) {
+      const element = removed[i];
+      const { ProductId, quantity } = element;
+
+      const CartId = Cart.cartId;
+      const result = await prisma.cartRecord.delete({
+        where: {
+          CartId_ProductId: {
+            CartId: CartId,
+            ProductId: ProductId,
+          },
+        },
       });
-      if (result == undefined) {
-        return element;
-      } else {
-        return undefined;
-      }
-    });
-
-    console.log("changed:\n", changed);
-    console.log("added:\n", added);
-    console.log("removed:\n", removed);
-
-    // add => create new record
-    // removed => remove connect
-    // changed => update
+    }
 
     res.send({ message: "success to update" });
   } catch (error) {
-    console.log(error);
-    res.send("failed to update");
+    next(error);
   }
 };
 
-module.exports.postUserOrder = async (req, res) => {
-  res.json({ message: "posting order" });
+module.exports.postUserOrder = async (req, res, next) => {
+  const userId = parseInt(req.params.userId);
+  const { data } = req.body;
+
+  try {
+    const orderRecords = data.map((e) => {
+      return { ProductId: e.recordProduct.productId, quantity: e.quantity };
+    });
+    const order = await prisma.order.create({
+      data: {
+        owner: { connect: { userId: userId } },
+        orderRecord: { create: orderRecords },
+      },
+    });
+
+    res.json({ message: "order success" });
+  } catch (error) {
+    next(error);
+  }
 };
 
-module.exports.postUsers = async (req, res) => {
+module.exports.postUsers = async (req, res, next) => {
   const { userEmail, userName } = req.body;
   res.json(req.body);
 };
 
-module.exports.deleteUsers = async (req, res) => {
+module.exports.deleteUsers = async (req, res, next) => {
   const { userId } = req.params;
   const userExisted = await prisma.user.findUnique({
     where: { userId: parseInt(userId) },

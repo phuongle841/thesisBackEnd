@@ -13,7 +13,7 @@ userRouter.get("/:userId/reviews", userController.getUserReviews);
 
 userRouter.put("/:userId/cart", verifyToken, userController.putUserCart);
 
-userRouter.post("/:userid/order", verifyToken, userController.postUserOrder);
+userRouter.post("/:userId/order", verifyToken, userController.postUserOrder);
 userRouter.post("/", userController.postUsers);
 
 userRouter.delete("/:userId", userController.deleteUsers);
