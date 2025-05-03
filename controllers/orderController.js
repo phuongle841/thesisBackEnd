@@ -11,10 +11,11 @@ module.exports.getOrders = async (req, res, next) => {
 };
 
 module.exports.getOrder = async (req, res, next) => {
-  const { userId } = req.query;
+  const userId = parseInt(req.params.userId);
   try {
     const orders = await prisma.order.findMany({
-      where: { userId: parseInt(userId) },
+      where: { owner: { userId: userId } },
+      include: { Product: true, owner: true },
     });
     res.send(orders);
   } catch (error) {
@@ -22,19 +23,20 @@ module.exports.getOrder = async (req, res, next) => {
   }
 };
 
-module.exports.postOrder = async (req, res, next) => {
+module.exports.postOrders = async (req, res, next) => {
   const userId = parseInt(req.params.userId);
   const { data } = req.body;
   // try to find if the exact order have been made
   const orderRecords = data.map((e) => {
-    return { ProductId: e.recordProduct.productId, quantity: e.quantity };
+    return {
+      UserId: userId,
+      ProductId: e.recordProduct.productId,
+      quantity: e.quantity,
+    };
   });
   try {
-    const order = await prisma.order.create({
-      data: {
-        owner: { connect: { userId: userId } },
-        orderRecord: { create: orderRecords },
-      },
+    const order = await prisma.order.createMany({
+      data: orderRecords,
     });
 
     res.json({ message: "order success" });

@@ -14,7 +14,7 @@ datasource db {
 }
 
 model Product {
-  productId          Int           @id @default(autoincrement())
+  productId          Int          @id @default(autoincrement())
   productName        String
   productImages      String[]
   productRating      Int?
@@ -22,10 +22,12 @@ model Product {
   productOrderAmount String?
   productDescription String
   productDetails     String
+  link               String?
+  inStock            Int          @default(1)
   Category           Category[]
-  userId             Int
-  owner              User          @relation(fields: [userId], references: [userId])
-  OrderRecord        OrderRecord[]
+  userId             Int?
+  owner              User?        @relation(fields: [userId], references: [userId])
+  order              Order[]
   reviewed           Review[]
   CartRecord         CartRecord[]
 }
@@ -57,12 +59,14 @@ model Category {
 }
 
 model User {
-  userId            Int        @id @default(autoincrement())
-  userEmail         String?    @unique
+  userId            Int           @id @default(autoincrement())
+  userEmail         String?       @unique
   password          String
   userName          String
+  phoneNumber       String?
   userAvatarUrl     String?
   userBackgroundUrl String?
+  predictFlavour    TrainingModel @default(ARIMA)
   userReviews       Review[]
   Product           Product[]
   Location          Location[]
@@ -93,29 +97,28 @@ model Review {
 }
 
 model Order {
-  orderId           Int           @id @default(autoincrement())
-  orderDate         DateTime      @default(now())
+  orderId           Int         @id @default(autoincrement())
+  orderDate         DateTime    @default(now())
   orderDeliveryDate DateTime?
   orderPaymentDate  DateTime?
-  paid              Boolean       @default(false)
-  orderStatus       OrderStatus   @default(PREPARED)
+  paid              Boolean     @default(false)
+  orderStatus       OrderStatus @default(PREPARED)
   UserId            Int
-  owner             User          @relation(fields: [UserId], references: [userId])
-  orderRecord       OrderRecord[]
-}
-
-model OrderRecord {
-  ProductId     Int
-  recordProduct Product @relation(fields: [ProductId], references: [productId])
-  Order         Order   @relation(fields: [OrderId], references: [orderId])
-  OrderId       Int
-  quantity      Int     @default(1)
-
-  @@id([OrderId, ProductId])
+  owner             User        @relation(fields: [UserId], references: [userId])
+  ProductId         Int
+  Product           Product     @relation(fields: [ProductId], references: [productId])
+  quantity          Int         @default(1)
 }
 
 enum OrderStatus {
   PREPARED
   SHIPPING
   DONE
+}
+
+enum TrainingModel {
+  ARIMA
+  SARIMA
+  SARIMAX
+  AUTOARIMA
 }

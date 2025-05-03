@@ -64,7 +64,6 @@ module.exports.getUserOrders = async (req, res, next) => {
   try {
     const orders = await prisma.order.findMany({
       where: { owner: { userId: parseInt(userId) } },
-      include: { orderRecord: { include: { recordProduct: true } } },
     });
     res.send(orders);
   } catch (error) {
@@ -75,9 +74,8 @@ module.exports.getUserOrders = async (req, res, next) => {
 module.exports.getUserReviews = async (req, res, next) => {
   const { userId } = req.params;
   try {
-    const user = await prisma.user.findUnique({
-      where: { userId: parseInt(userId) },
-      select: { userReviews: true },
+    const user = await prisma.review.findMany({
+      where: { reviewerId: parseInt(userId) },
     });
     res.send(user);
   } catch (error) {

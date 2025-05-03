@@ -7,7 +7,7 @@ const verifyToken = require("../middlewares/verifyToken");
 orderRouter.get("/", orderController.getOrders);
 orderRouter.get("/user/:userId", orderController.getOrder);
 
-orderRouter.post("/user/:userId", verifyToken, orderController.postOrder);
+orderRouter.post("/user/:userId", verifyToken, orderController.postOrders);
 
 orderRouter.delete("/user/:userId", orderController.getOrders);
 

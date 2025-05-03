@@ -10,11 +10,16 @@ const path = require("path");
 const { UserModel } = require("./modelFacade/User");
 const { ReviewModel } = require("./modelFacade/Review");
 const { randomIntFromInterval } = require("../utils/randomInterval");
+const { OrderModel } = require("./modelFacade/Order");
 
 const prisma = new PrismaClient();
 const productFile = path.resolve(__dirname, "./archive/amazon_products.csv");
 const CategoryFile = path.resolve(__dirname, "./archive/amazon_categories.csv");
 const reviewFile = path.resolve(__dirname, "./archive/fake_reviews.csv");
+const series = path.resolve(
+  __dirname,
+  "./archive/TimeSeriesPracticeDataset.csv"
+);
 
 async function seedCategories() {
   return new Promise((resolve, reject) => {
@@ -50,11 +55,7 @@ async function seedProducts() {
       })
       .on("end", async () => {
         try {
-          const user = await prisma.user.findFirst({});
-          if (!user) {
-            throw new Error("No user found to associate with products.");
-          }
-          const result = ProductModel(productData, user.userId);
+          const result = ProductModel(productData);
           await prisma.product.createMany({ data: result });
           resolve();
         } catch (error) {
@@ -73,7 +74,6 @@ async function seedUser() {
   const password = process.env.password;
   const userBackgroundUrl = process.env.userBackgroundUrl;
   const userAvatarUrl = process.env.userAvatarUrl;
-
   let result = UserModel([
     {
       userEmail,
@@ -106,6 +106,18 @@ async function seedReviews() {
         }
       });
   });
+}
+
+async function updateOwnerProductRelationship() {
+  try {
+    const { userId } = await prisma.user.findFirst({});
+    const updateProduct = await prisma.product.updateMany({
+      where: { productPrice: { gte: 300 } },
+      data: { userId },
+    });
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 async function updateProductCategoryRelationship() {
@@ -213,28 +225,76 @@ async function seedLocation() {
   });
 }
 
+async function seedInsaneAmountOfOrders() {
+  return new Promise((resolve, reject) => {
+    console.log("seeding series data");
+    const orders = [];
+    fs.createReadStream(series)
+      .pipe(parse({ delimiter: ":" }))
+      .on("data", (csvRow) => {
+        orders.push(csvRow);
+      })
+      .on("end", async () => {
+        try {
+          const productIds = await prisma.product.findMany({
+            where: { productPrice: { gte: 300 } },
+            select: { productId: true },
+          });
+          const input = splitIntoChunks(orders, 50);
+          const dates = getArrayOfDays().reverse();
+          const result = OrderModel(input, dates, 1, productIds);
+          for (let i = 0; i < result.length; i++) {
+            const element = result[i];
+            await prisma.order.create({
+              data: element,
+            });
+          }
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      })
+      .on("error", reject);
+  });
+}
+
+function getArrayOfDays(count = 50) {
+  const dates = [];
+  const today = new Date();
+  for (let i = 1; i < count + 1; i++) {
+    const date = new Date();
+    date.setDate(today.getDate() - i);
+    dates.push(date);
+  }
+  return dates;
+}
+function splitIntoChunks(arr, chunkSize = 50) {
+  const result = [];
+
+  for (let i = 0; i < arr.length; i += chunkSize) {
+    result.push(arr.slice(i, i + chunkSize));
+  }
+
+  return result;
+}
+
 async function seedOrder() {
   console.log("update order items");
-
   const products = await prisma.product.findMany({
     skip: 0,
     take: 5,
     select: { productId: true },
   });
-  const orderRecords = products.map((e) => {
-    return { ProductId: e.productId, quantity: 1 };
-  });
-  const userId = await prisma.user.findFirst({ select: { userId: true } });
-
   try {
-    const order = await prisma.order.create({
-      data: {
-        owner: { connect: userId },
-        orderRecord: {
-          create: orderRecords,
+    for (let i = 0; i < products.length; i++) {
+      const element = products[i];
+      const order = await prisma.order.create({
+        data: {
+          owner: { connect: { userId: 1 } },
+          Product: { connect: { productId: element.productId } },
         },
-      },
-    });
+      });
+    }
   } catch (error) {
     console.log(error);
   }
@@ -244,12 +304,14 @@ async function main() {
   await seedUser();
   await seedCategories();
   await seedProducts();
+  await updateOwnerProductRelationship();
   await updateProductCategoryRelationship();
   await updateCategoryImage();
   await seedReviews();
   await seedCartItem();
   await seedLocation();
-  await seedOrder();
+  await seedInsaneAmountOfOrders();
+  // await seedOrder();
 }
 
 // update both schema and prisma client:npx prisma migrate dev
