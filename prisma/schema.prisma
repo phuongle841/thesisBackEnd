@@ -23,6 +23,7 @@ model Product {
   productDescription String
   productDetails     String
   link               String?
+  addDate            DateTime     @default(now())
   inStock            Int          @default(1)
   Category           Category[]
   userId             Int?
@@ -59,19 +60,26 @@ model Category {
 }
 
 model User {
-  userId            Int           @id @default(autoincrement())
-  userEmail         String?       @unique
-  password          String
+  userId            Int              @id @default(autoincrement())
   userName          String
   phoneNumber       String?
   userAvatarUrl     String?
   userBackgroundUrl String?
-  predictFlavour    TrainingModel @default(ARIMA)
+  predictFlavour    TrainingModel    @default(ARIMA)
   userReviews       Review[]
   Product           Product[]
   Location          Location[]
   Cart              Cart?
   Order             Order[]
+  UserCredentials   UserCredentials?
+}
+
+model UserCredentials {
+  userEmail String? @unique
+  password  String
+  // unique to create one-to-one relationship
+  UserId    Int     @unique
+  user      User    @relation(fields: [UserId], references: [userId])
 }
 
 model Location {
@@ -104,7 +112,7 @@ model Order {
   paid              Boolean     @default(false)
   orderStatus       OrderStatus @default(PREPARED)
   UserId            Int
-  owner             User        @relation(fields: [UserId], references: [userId])
+  orderUser         User        @relation(fields: [UserId], references: [userId])
   ProductId         Int
   Product           Product     @relation(fields: [ProductId], references: [productId])
   quantity          Int         @default(1)

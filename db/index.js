@@ -83,7 +83,17 @@ async function seedUser() {
       userAvatarUrl,
     },
   ]);
-  const user = await prisma.user.createMany({ data: result });
+  const users = await prisma.user.createManyAndReturn({ data: result });
+  // this is create
+  const { userId } = users[0];
+
+  const credential = await prisma.userCredentials.create({
+    data: {
+      userEmail: userEmail,
+      password: password,
+      user: { connect: { userId } },
+    },
+  });
 }
 
 async function seedReviews() {

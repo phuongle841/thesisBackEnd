@@ -1,8 +1,9 @@
-module.exports.UserModel = (data) => {
+module.exports.UserCredentialModel = (data) => {
   const result = data.map((person) => {
     const { userEmail, password, userName } = person;
     const input = {
-      userName,
+      userEmail,
+      password,
     };
     return input;
   });

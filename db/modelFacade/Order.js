@@ -4,7 +4,7 @@ module.exports.OrderModel = (data, dates, userId, productIds) => {
     const productId = productIds[index];
     orders.forEach((order, j) => {
       row.push({
-        owner: { connect: { userId } },
+        orderUser: { connect: { userId } },
         Product: { connect: productId },
         quantity: parseInt(order.number_sold),
         orderDate: dates[j],
