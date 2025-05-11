@@ -1,6 +1,11 @@
 const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
 const prisma = new PrismaClient();
 const ARIMA = require("arima");
+const take = 20;
+const skip = 0;
 
 const models = {
   arima: { p: 2, d: 1, q: 2, verbose: false },
@@ -29,6 +34,36 @@ function runForecast(products, modelConfig, forecastLength = foreseeDates) {
     return { ...product, expect: pred };
   });
 }
+
+module.exports.authenticate = async (req, res, next) => {
+  const { userEmail, userPassword } = req.authData.user;
+  try {
+    const credentials = await prisma.userCredentials.findUnique({
+      where: { userEmail },
+      include: { user: true },
+    });
+    const { user } = credentials;
+
+    if (!credentials)
+      return res.status(401).json({
+        error: "Invalid credentials, Cannot find credentials in database",
+      });
+
+    const match = await bcrypt.compare(userPassword, credentials.password);
+
+    if (!match)
+      return res
+        .status(401)
+        .json({ error: "Invalid credentials, Not matching credentials" });
+
+    jwt.sign({ user }, process.env.secretKey, (err, token) => {
+      res.json({ token, user });
+    });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
 
 module.exports.getProductData = async (req, res, next) => {
   try {
@@ -74,9 +109,15 @@ module.exports.getInventory = async (req, res, next) => {
 };
 
 module.exports.getOrders = async (req, res, next) => {
-  const userId = parseInt(req.params.userId);
+  const userId = parseInt(req.params?.userId);
+  const currentTake = parseInt(req.params?.take);
+
   try {
-    const order = await prisma.order.findMany({ where: { owner: { userId } } });
+    const order = await prisma.order.findMany({
+      where: { Product: { owner: { userId } } },
+      take: currentTake ? currentTake : take,
+      include: { Product: true },
+    });
     res.json(order);
   } catch (error) {
     console.log(error);

@@ -1,6 +1,7 @@
 const { PrismaClient, Prisma } = require("@prisma/client");
 const fs = require("fs");
 const util = require("util");
+require("dotenv").config();
 
 const parse = require("csv-parser");
 
@@ -11,6 +12,7 @@ const { UserModel } = require("./modelFacade/User");
 const { ReviewModel } = require("./modelFacade/Review");
 const { randomIntFromInterval } = require("../utils/randomInterval");
 const { OrderModel } = require("./modelFacade/Order");
+const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
 const productFile = path.resolve(__dirname, "./archive/amazon_products.csv");
@@ -86,11 +88,11 @@ async function seedUser() {
   const users = await prisma.user.createManyAndReturn({ data: result });
   // this is create
   const { userId } = users[0];
-
+  const hashedPassword = await bcrypt.hash(password, 10);
   const credential = await prisma.userCredentials.create({
     data: {
       userEmail: userEmail,
-      password: password,
+      password: hashedPassword,
       user: { connect: { userId } },
     },
   });
@@ -310,18 +312,32 @@ async function seedOrder() {
   }
 }
 
+async function testAuthenticate() {
+  try {
+    const userEmail = "ITITIU20281@student.hcmiu.edu.vn";
+    const authenticate = await prisma.userCredentials.findUnique({
+      where: { userEmail },
+    });
+    const user = await prisma.user.findMany({
+      where: { UserCredentials: { is: { userEmail } } },
+    });
+    console.log(authenticate);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 async function main() {
   await seedUser();
-  await seedCategories();
-  await seedProducts();
-  await updateOwnerProductRelationship();
-  await updateProductCategoryRelationship();
-  await updateCategoryImage();
-  await seedReviews();
-  await seedCartItem();
-  await seedLocation();
-  await seedInsaneAmountOfOrders();
-  // await seedOrder();
+  // await seedCategories();
+  // await seedProducts();
+  // await updateOwnerProductRelationship();
+  // await updateProductCategoryRelationship();
+  // await updateCategoryImage();
+  // await seedReviews();
+  // await seedCartItem();
+  // await seedLocation();
+  // await seedInsaneAmountOfOrders();
 }
 
 // update both schema and prisma client:npx prisma migrate dev

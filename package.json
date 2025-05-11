@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
-    "dev": "node --watch app.js"
+    "dev": "NODE_ENV=development && node --watch app.js",
+    "test": "NODE_ENV=test && jest --testTimeout=5000 --detectOpenHandles"
   },
   "prisma": {
     "seed": "node prisma/seed.js",
@@ -21,6 +21,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
+    "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2"
   },

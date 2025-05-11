@@ -13,11 +13,14 @@ module.exports.getUsers = async (req, res) => {
 
 module.exports.getUserByToken = async (req, res, next) => {
   const { userEmail } = req.authData.user;
+  console.log(req.authData);
+
   try {
-    const { userId } = await prisma.user.findUnique({
-      where: { userEmail: userEmail },
-      select: { userId: true },
+    const userId = await prisma.userCredentials.findUnique({
+      where: { userEmail },
+      // include: { user: true },
     });
+
     res.json({ userId });
   } catch (error) {
     res.sendStatus(404);
