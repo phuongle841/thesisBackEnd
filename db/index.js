@@ -326,9 +326,10 @@ async function testAuthenticate() {
     console.log(error);
   }
 }
+async function CategorizeData() {}
 
 async function main() {
-  await seedUser();
+  // await seedUser();
   // await seedCategories();
   // await seedProducts();
   // await updateOwnerProductRelationship();

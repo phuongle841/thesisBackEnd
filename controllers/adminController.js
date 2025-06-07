@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 
 const prisma = new PrismaClient();
 const ARIMA = require("arima");
+
 const take = 20;
 const skip = 0;
 
@@ -67,8 +68,30 @@ module.exports.authenticate = async (req, res, next) => {
 
 module.exports.getProductData = async (req, res, next) => {
   try {
-    const products = await fetchProductsWithOrders(1);
+    let products = await fetchProductsWithOrders(1);
+
+    let longestOrderArray = products.reduce((longest, product) => {
+      return product.order.length > longest.length ? product.order : longest;
+    }, []);
+
+    let maxLength = longestOrderArray.length;
+
+    // Fill in the gaps
+    products = products.map((product) => {
+      let order = [...product.order];
+
+      // Fill in the gaps with the corresponding orderDate from the longest order array
+      while (order.length < maxLength) {
+        const missingIndex = order.length;
+        const orderDateFromLongest = longestOrderArray[missingIndex].orderDate; // Get the orderDate from the longest order
+        order.push({ quantity: null, orderDate: orderDateFromLongest });
+      }
+
+      return { ...product, order };
+    });
+
     const forecasted = runForecast(products, models["arima"]);
+
     res.json(forecasted);
   } catch (error) {
     next(error);
@@ -124,12 +147,31 @@ module.exports.getOrders = async (req, res, next) => {
     next(error);
   }
 };
-module.exports.getFeedbacks = async (req, res, next) => {
-  const userId = parseInt(req.params.userId);
-  // userid = null since the front-end not yet set userid
+module.exports.putOrder = async (req, res, next) => {
+  const { orderId, orderStatus, paid } = req.body.data;
+  const updateData = {};
+  if (orderStatus !== undefined) updateData.orderStatus = orderStatus;
+  if (paid !== undefined) updateData.paid = paid;
 
   try {
+    const result = await prisma.order.update({
+      where: { orderId: parseInt(orderId) },
+      data: updateData,
+    });
+    res.json(result);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+module.exports.getFeedbacks = async (req, res, next) => {
+  const userId = parseInt(req.params.userId);
+
+  // userid = null since the front-end not yet set userid
+  try {
     const feedbacks = await prisma.review.findMany({
+      where: { product: { owner: { userId: userId } } },
       include: { product: true, reviewer: true },
     });
     res.json(feedbacks);

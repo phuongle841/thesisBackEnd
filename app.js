@@ -3,7 +3,9 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-
+// line printer should not be used in product
+const lineDisplay = require("./utils/consoleHelper");
+lineDisplay();
 const PORT = process.env.PORT || 3000;
 const app = express();
 

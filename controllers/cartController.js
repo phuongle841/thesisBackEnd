@@ -1,14 +1,21 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 module.exports.getCart = async (req, res, next) => {
-  const { authData } = req;
-  const { userEmail } = authData.user;
+  const { userId } = req.params;
   try {
-    const result = await prisma.user.findUnique({
-      where: { userEmail: userEmail },
-      select: { Product: { take: 2 } },
+    const cart = await prisma.cart.findFirst({
+      where: { user: { userId: parseInt(userId) } },
+      select: {
+        cartId: true,
+        cartRecord: {
+          select: {
+            quantity: true,
+            recordProduct: true,
+          },
+        },
+      },
     });
-    res.send(result);
+    res.send(cart);
   } catch (error) {
     next(error);
   }

@@ -13,8 +13,6 @@ module.exports.getUsers = async (req, res) => {
 
 module.exports.getUserByToken = async (req, res, next) => {
   const { userEmail } = req.authData.user;
-  console.log(req.authData);
-
   try {
     const userId = await prisma.userCredentials.findUnique({
       where: { userEmail },
@@ -142,7 +140,7 @@ module.exports.putUserCart = async (req, res, next) => {
             ProductId: recordProduct.productId,
           },
         },
-        data: { quantity: quantity },
+        data: { quantity: parseInt(quantity) },
       });
     }
 

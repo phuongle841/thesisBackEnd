@@ -15,7 +15,9 @@ adminRouter.get(
   verifyToken,
   adminController.getInventory
 );
+
 adminRouter.get("/:userId/orders", verifyToken, adminController.getOrders);
+adminRouter.put("/:userId/orders", verifyToken, adminController.putOrder);
 
 adminRouter.get(
   "/:userId/feedbacks",

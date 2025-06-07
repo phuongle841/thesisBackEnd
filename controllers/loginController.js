@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 
 module.exports.signup = async (req, res, next) => {
   const { email, password, username } = req.body;
-  console.log(req.body);
 
   const hashedPassword = await bcrypt.hash(password, 10);
   try {
@@ -44,7 +43,6 @@ module.exports.login = async (req, res, next) => {
       });
 
     const match = await bcrypt.compare(userPassword, credentials.password);
-    console.log(match);
 
     if (!match)
       return res
@@ -52,8 +50,6 @@ module.exports.login = async (req, res, next) => {
         .json({ error: "Invalid credentials, Not matching credentials" });
 
     jwt.sign({ user }, process.env.secretKey, (err, token) => {
-      console.log(token, credentials);
-
       res.json({ token, credentials });
     });
   } catch (error) {
