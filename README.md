@@ -2,7 +2,7 @@
 
 # FRONT-END:
 
-- https://github.com/phuongle841/thesisFrontEnd_User/settings
+https://github.com/phuongle841/thesisFrontEnd_User
 
 # object:
 
