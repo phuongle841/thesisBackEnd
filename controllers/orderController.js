@@ -27,7 +27,8 @@ module.exports.getOrder = async (req, res, next) => {
       skip,
       orderBy: { orderDate: "desc" },
     });
-    res.send(orders);
+    const count = await prisma.order.count();
+    res.send({ orders: orders, count });
   } catch (error) {
     console.error("Error fetching orders:", error);
     next(error);
@@ -62,8 +63,7 @@ module.exports.postOrders = async (req, res, next) => {
     return {
       UserId: userId,
       ProductId: e.recordProduct.productId,
-      // 500 times quantify for charts
-      quantity: e.quantity * 500,
+      quantity: e.quantity,
     };
   });
   try {

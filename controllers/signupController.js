@@ -19,15 +19,26 @@ module.exports.signup = async (req, res, next) => {
   const { email, password, username } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
   try {
-    const user = await prisma.user.create({
+    const { userId } = await prisma.user.create({
       data: {
         userName: username,
         UserCredentials: {
           create: { userEmail: email, password: hashedPassword },
         },
       },
-      include: { UserCredentials: true },
+      select: { userId: true, UserCredentials: true },
     });
+
+    const cart = await prisma.cart.upsert({
+      where: { userId },
+      update: {},
+      create: { userId },
+    });
+
+    const location = await prisma.location.create({
+      data: { userId, address: "" },
+    });
+
     res.status(201).json({ message: "User registered" });
   } catch (error) {
     console.log(error);

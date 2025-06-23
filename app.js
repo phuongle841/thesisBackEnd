@@ -21,6 +21,7 @@ app.use("/login", routes.loginRouter);
 app.use("/products", routes.productRouter);
 app.use("/search", routes.searchRouter);
 app.use("/orders", routes.orderRouter);
+app.use("/review", routes.reviewRouter);
 app.use("/users", routes.userRouter);
 app.use("/", routes.appRouter);
 app.use((err, req, res, next) => {

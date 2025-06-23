@@ -1,6 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { startOfDay } = require("date-fns");
 
 const prisma = new PrismaClient();
 const ARIMA = require("arima");
@@ -9,13 +10,13 @@ const take = 20;
 const skip = 0;
 
 const models = {
-  arima: { p: 2, d: 1, q: 2, verbose: false },
+  arima: { p: 1, d: 0, q: 1, verbose: false },
   sarima: { p: 2, d: 1, q: 2, P: 1, D: 0, Q: 1, s: 12, verbose: false },
   auto: { auto: true },
   sarimax: { p: 1, d: 0, q: 1, transpose: true, verbose: false },
 };
 
-const foreseeDates = 20;
+const foreseeDates = 3;
 
 async function fetchProductsWithOrders(userId) {
   return prisma.product.findMany({
@@ -26,6 +27,7 @@ async function fetchProductsWithOrders(userId) {
     },
   });
 }
+
 function runForecast(products, modelConfig, forecastLength = foreseeDates) {
   const arima = new ARIMA(modelConfig);
   return products.map((product) => {
@@ -70,32 +72,81 @@ module.exports.getProductData = async (req, res, next) => {
   try {
     let products = await fetchProductsWithOrders(1);
 
+    // 1. Combine same-day orders into one record per product
+    products = products.map((product) => {
+      const groupedOrders = {};
+
+      product.order.forEach(({ quantity, orderDate }) => {
+        const day = startOfDay(new Date(orderDate)).toISOString();
+
+        if (!groupedOrders[day]) {
+          groupedOrders[day] = 0;
+        }
+        groupedOrders[day] += quantity ?? 0;
+      });
+
+      // Turn the grouped object into sorted array
+      const aggregatedOrders = Object.entries(groupedOrders)
+        .map(([date, totalQuantity]) => ({
+          orderDate: new Date(date),
+          quantity: totalQuantity,
+        }))
+        .sort((a, b) => a.orderDate - b.orderDate);
+
+      return { ...product, order: aggregatedOrders };
+    });
+
+    // 2. Find the longest order array (for filling gaps)
     let longestOrderArray = products.reduce((longest, product) => {
       return product.order.length > longest.length ? product.order : longest;
     }, []);
-
     let maxLength = longestOrderArray.length;
 
-    // Fill in the gaps
+    // 3. Fill in missing dates with null quantity
     products = products.map((product) => {
       let order = [...product.order];
 
-      // Fill in the gaps with the corresponding orderDate from the longest order array
+      // Fill in the gaps with matching dates
       while (order.length < maxLength) {
         const missingIndex = order.length;
-        const orderDateFromLongest = longestOrderArray[missingIndex].orderDate; // Get the orderDate from the longest order
-        order.push({ quantity: null, orderDate: orderDateFromLongest });
+        const dateFromLongest = longestOrderArray[missingIndex].orderDate;
+
+        order.push({ orderDate: dateFromLongest, quantity: null });
       }
 
       return { ...product, order };
     });
 
+    // 4. Run forecast
     const forecasted = runForecast(products, models["arima"]);
+    console.log(forecasted[0]);
 
     res.json(forecasted);
   } catch (error) {
     next(error);
   }
+};
+
+const groupOrdersByProduct = (flatOrders) => {
+  const grouped = {};
+
+  for (const entry of flatOrders) {
+    const { productId, orderDate, totalQuantity } = entry;
+
+    if (!grouped[productId]) {
+      grouped[productId] = [];
+    }
+
+    grouped[productId].push({
+      orderDate,
+      quantity: totalQuantity,
+    });
+  }
+
+  return Object.entries(grouped).map(([productId, order]) => ({
+    productId: Number(productId),
+    order,
+  }));
 };
 
 module.exports.putProductData = async (req, res, next) => {

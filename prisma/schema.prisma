@@ -110,7 +110,7 @@ model Order {
   orderDeliveryDate DateTime?
   orderPaymentDate  DateTime?
   paid              Boolean     @default(false)
-  orderStatus       OrderStatus @default(PREPARING)
+  orderStatus       OrderStatus @default(PREPARED)
   UserId            Int
   orderUser         User        @relation(fields: [UserId], references: [userId])
   ProductId         Int
@@ -119,7 +119,7 @@ model Order {
 }
 
 enum OrderStatus {
-  PREPARING
+  PREPARED
   SHIPPED
   DELIVERED
   CANCELLED

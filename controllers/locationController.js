@@ -2,16 +2,20 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const util = require("util");
 
-module.exports.getLocation = async (req, res) => {
-  const result = { location: "NewYork" };
+module.exports.getLocation = async (req, res, next) => {
   const { authData } = req;
 
-  const user = await prisma.userCredentials.findUnique({
-    where: { userEmail: authData.user.userEmail },
-    select: { user: { select: { Location: true } } },
-  });
+  try {
+    const { UserId } = await prisma.userCredentials.findUnique({
+      where: { userEmail: authData.user.userEmail },
+    });
 
-  console.log(util.inspect(user, false, null, true /* enable colors */));
-
-  res.json(result);
+    const location = await prisma.location.findMany({
+      where: { user: { userId: UserId } },
+    });
+    res.json(location);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
 };

@@ -14,7 +14,11 @@ module.exports.getProductById = async (req, res, next) => {
   try {
     const product = await prisma.product.findUnique({
       where: { productId: parseInt(productId) },
-      include: { Category: true, owner: true, reviewed: true },
+      include: {
+        Category: true,
+        owner: true,
+        reviewed: { include: { reviewer: true } },
+      },
     });
     res.send(product);
   } catch (error) {

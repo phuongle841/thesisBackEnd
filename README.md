@@ -1,5 +1,9 @@
 # EXPRESS + POSTGRESQL
 
+# FRONT-END:
+
+- https://github.com/phuongle841/thesisFrontEnd_User/settings
+
 # object:
 
 - validate using JWTs

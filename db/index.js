@@ -202,8 +202,7 @@ async function seedCartItem() {
   console.log("update cart items");
 
   const products = await prisma.product.findMany({
-    skip: 10,
-    take: 5,
+    where: { productId: { in: [10, 13, 30, 36, 88] } },
     select: { productId: true },
   });
 
@@ -219,7 +218,7 @@ async function seedCartItem() {
     const data = products.map((e) => {
       const CartId = cartId;
       const ProductId = e.productId;
-      const quantity = randomIntFromInterval(3, 10);
+      const quantity = randomIntFromInterval(800, 900);
       return { CartId, ProductId, quantity };
     });
     const result = await prisma.cartRecord.createMany({ data: data });
@@ -326,19 +325,79 @@ async function testAuthenticate() {
     console.log(error);
   }
 }
-async function CategorizeData() {}
+async function categorizeData() {
+  console.log("what");
+
+  try {
+    const mostOrderedPerCategory = await prisma.$queryRaw`
+  SELECT DISTINCT ON (ctp."A") 
+       ctp."A" AS "categoryId", 
+       p."productId", 
+       COUNT(o."orderId") AS order_count
+FROM "_CategoryToProduct" ctp
+JOIN "Product" p ON p."productId" = ctp."B"
+LEFT JOIN "Order" o ON o."ProductId" = p."productId"
+GROUP BY ctp."A", p."productId"
+ORDER BY ctp."A", order_count DESC;
+`;
+
+    const ARIMA = require("arima");
+    const MSE = (a, b) =>
+      a.reduce((sum, val, i) => sum + (val - b[i]) ** 2, 0) / a.length;
+
+    const products = await prisma.product.findMany({
+      where: { owner: { userId: 1 } },
+      include: {
+        order: { select: { quantity: true, orderDate: true } },
+        Category: true,
+      },
+      take: 1,
+    });
+
+    const orderData = products[0].order.map((e) => e.quantity);
+
+    const candidates = [
+      { p: 1, d: 0, q: 1 },
+      { p: 1, d: 1, q: 1 },
+      { p: 2, d: 1, q: 2 },
+      { p: 3, d: 1, q: 1 },
+      { p: 2, d: 0, q: 2 },
+    ];
+
+    let bestConfig = null;
+    let lowestError = Infinity;
+
+    for (const { p, d, q } of candidates) {
+      try {
+        const arima = new ARIMA({ p, d, q }).train(orderData);
+        const [predictions] = arima.predict(orderData.length);
+
+        const error = MSE(orderData, predictions);
+        if (error < lowestError) {
+          lowestError = error;
+          bestConfig = { p, d, q };
+        }
+      } catch (err) {
+        console.error(`Failed for p=${p}, d=${d}, q=${q}:`, err.message);
+      }
+    }
+
+    console.log("Best ARIMA config:", bestConfig);
+  } catch (error) {}
+}
 
 async function main() {
-  // await seedUser();
-  // await seedCategories();
-  // await seedProducts();
-  // await updateOwnerProductRelationship();
-  // await updateProductCategoryRelationship();
-  // await updateCategoryImage();
-  // await seedReviews();
-  // await seedCartItem();
-  // await seedLocation();
-  // await seedInsaneAmountOfOrders();
+  await seedUser();
+  await seedCategories();
+  await seedProducts();
+  await updateOwnerProductRelationship();
+  await updateProductCategoryRelationship();
+  await updateCategoryImage();
+  await seedReviews();
+  await seedCartItem();
+  await seedLocation();
+  await seedInsaneAmountOfOrders();
+  await categorizeData();
 }
 
 // update both schema and prisma client:npx prisma migrate dev
