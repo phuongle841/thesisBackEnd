@@ -18,13 +18,13 @@ module.exports.signup = async (req, res, next) => {
       include: { UserCredentials: true },
     });
 
-    const cart = await prisma.cart.upsert({
+    const newCart = await prisma.cart.upsert({
       where: { userId },
       update: {},
       create: { userId },
     });
 
-    const location = await prisma.location.create({
+    const newLocation = await prisma.location.create({
       data: { userId, address: "" },
     });
 
@@ -60,9 +60,13 @@ module.exports.login = async (req, res, next) => {
         .status(401)
         .json({ error: "Invalid credentials, Not matching credentials" });
 
-    jwt.sign({ user }, process.env.secretKey, (err, token) => {
-      res.json({ token, credentials });
-    });
+    jwt.sign(
+      { UserId: credentials.UserId, userEmail: credentials.userEmail },
+      process.env.secretKey,
+      (err, token) => {
+        res.json({ token, UserId: credentials.UserId });
+      }
+    );
   } catch (error) {
     console.log(error);
     next(error);

@@ -2,7 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 module.exports.getUsers = async (req, res) => {
-  const { userid, userEmail, userName } = req.query;
+  const { userId, userEmail, userName } = req.query;
   try {
     const users = await prisma.user.findMany();
     res.send(users);
@@ -12,14 +12,8 @@ module.exports.getUsers = async (req, res) => {
 };
 
 module.exports.getUserByToken = async (req, res, next) => {
-  const { userEmail } = req.authData.user;
   try {
-    const userId = await prisma.userCredentials.findUnique({
-      where: { userEmail },
-      // include: { user: true },
-    });
-
-    res.json({ userId });
+    res.json({ userId: req.authData.UserId });
   } catch (error) {
     res.sendStatus(404);
     next(error);
@@ -204,8 +198,14 @@ module.exports.postUserOrder = async (req, res, next) => {
 };
 
 module.exports.postUsers = async (req, res, next) => {
-  const { userEmail, userName } = req.body;
+  const { user } = req.body;
   res.json(req.body);
+};
+
+module.exports.putUser = async (req, res, next) => {
+  const { user } = req.body;
+  const status = prisma.user.upsert({ where: { user }, update });
+  res.json(user);
 };
 
 module.exports.deleteUsers = async (req, res, next) => {
@@ -214,7 +214,7 @@ module.exports.deleteUsers = async (req, res, next) => {
     where: { userId: parseInt(userId) },
   });
   if (userExisted) {
-    return res.status("404").json({ error: "User already existed" });
+    return res.status(404).json({ error: "User already existed" });
   }
   res.json(user);
 };

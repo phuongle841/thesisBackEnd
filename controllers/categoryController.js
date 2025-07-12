@@ -14,7 +14,7 @@ module.exports.getCategories = async (req, res) => {
   res.send(categories);
 };
 
-module.exports.getCategoriesById = async (req, res) => {
+module.exports.getCategoryById = async (req, res) => {
   const { categoryId } = req.params;
   const { take, skip } = req.query;
 

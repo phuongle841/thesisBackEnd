@@ -83,7 +83,9 @@ module.exports.putProducts = async (req, res, next) => {
 module.exports.deleteProducts = async (req, res, next) => {
   const { productId } = req.params;
   try {
-    const users = await prisma.user.delete({ where: { productId: productId } });
+    const users = await prisma.user.delete({
+      where: { productId: parseInt(productId) },
+    });
     res.send(users);
   } catch (error) {
     res.sendStatus(404);

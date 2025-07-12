@@ -12,6 +12,7 @@ userRouter.get("/:userId/order", verifyToken, userController.getUserOrders);
 userRouter.get("/:userId/reviews", userController.getUserReviews);
 
 userRouter.put("/:userId/cart", verifyToken, userController.putUserCart);
+userRouter.put("/:userId", verifyToken, userController.putUser);
 
 userRouter.post("/:userId/order", verifyToken, userController.postUserOrder);
 userRouter.post("/", userController.postUsers);

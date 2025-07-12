@@ -39,10 +39,13 @@ function runForecast(products, modelConfig, forecastLength = foreseeDates) {
 }
 
 module.exports.authenticate = async (req, res, next) => {
-  const { userEmail, userPassword } = req.authData.user;
+  const { UserId } = req.authData;
+
   try {
     const credentials = await prisma.userCredentials.findUnique({
-      where: { userEmail },
+      where: {
+        UserId: UserId,
+      },
       include: { user: true },
     });
     const { user } = credentials;
@@ -51,13 +54,6 @@ module.exports.authenticate = async (req, res, next) => {
       return res.status(401).json({
         error: "Invalid credentials, Cannot find credentials in database",
       });
-
-    const match = await bcrypt.compare(userPassword, credentials.password);
-
-    if (!match)
-      return res
-        .status(401)
-        .json({ error: "Invalid credentials, Not matching credentials" });
 
     jwt.sign({ user }, process.env.secretKey, (err, token) => {
       res.json({ token, user });
@@ -119,8 +115,6 @@ module.exports.getProductData = async (req, res, next) => {
 
     // 4. Run forecast
     const forecasted = runForecast(products, models["arima"]);
-    console.log(forecasted[0]);
-
     res.json(forecasted);
   } catch (error) {
     next(error);
