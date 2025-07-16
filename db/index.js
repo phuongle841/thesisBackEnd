@@ -22,6 +22,7 @@ const series = path.resolve(
   __dirname,
   "./archive/TimeSeriesPracticeDataset.csv"
 );
+const ARIMA = require("arima");
 
 async function seedCategories() {
   return new Promise((resolve, reject) => {
@@ -386,6 +387,64 @@ ORDER BY ctp."A", order_count DESC;
   } catch (error) {}
 }
 
+async function testRecordPredict(params) {
+  const model = { auto: true, verbose: false };
+  const foreseeDates = 5;
+
+  try {
+    const users = await prisma.user.findMany({ select: { userId: true } });
+
+    // for now just get the first user
+    for (const { userId } of users) {
+      const products = await fetchProductsWithOrders(userId);
+      const forecasted = runForecast(products, model);
+      await saveSnapshot(userId, forecasted);
+    }
+
+    console.log("✅ Snapshot saved successfully");
+  } catch (error) {
+    console.error("❌ Snapshot failed:", error);
+  }
+
+  async function fetchProductsWithOrders(userId) {
+    return prisma.product.findMany({
+      where: { owner: { userId } },
+      include: {
+        order: { select: { quantity: true, orderDate: true } },
+        Category: true,
+      },
+    });
+  }
+
+  function runForecast(products, modelConfig, forecastLength = foreseeDates) {
+    const arima = new ARIMA(modelConfig);
+    return products.map((product) => {
+      const ts = product.order.map((e) => e.quantity);
+      arima.train(ts);
+      let [pred] = arima.predict(forecastLength);
+      pred = pred.map((e) => Math.floor(e));
+      return { ...product, expect: pred };
+    });
+  }
+
+  async function saveSnapshot(userId, forecastedData) {
+    for (const product of forecastedData) {
+      await prisma.predictData.upsert({
+        where: {
+          ProductId: product.productId,
+        },
+        update: {
+          predictedValues: product.expect,
+        },
+        create: {
+          ProductId: product.productId,
+          predictedValues: product.expect,
+        },
+      });
+    }
+  }
+}
+
 async function main() {
   await seedUser();
   await seedCategories();
@@ -398,6 +457,7 @@ async function main() {
   await seedLocation();
   await seedInsaneAmountOfOrders();
   await categorizeData();
+  await testRecordPredict();
 }
 
 // update both schema and prisma client:npx prisma migrate dev

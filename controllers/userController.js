@@ -204,7 +204,13 @@ module.exports.postUsers = async (req, res, next) => {
 
 module.exports.putUser = async (req, res, next) => {
   const { user } = req.body;
-  const status = prisma.user.upsert({ where: { user }, update });
+  const { UserId } = req.authData;
+
+  const result = await prisma.user.update({
+    where: { userId: UserId },
+    data: user,
+  });
+
   res.json(user);
 };
 

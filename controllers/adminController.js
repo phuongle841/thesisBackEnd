@@ -12,7 +12,7 @@ const skip = 0;
 const models = {
   arima: { p: 1, d: 0, q: 1, verbose: false },
   sarima: { p: 2, d: 1, q: 2, P: 1, D: 0, Q: 1, s: 12, verbose: false },
-  auto: { auto: true },
+  auto: { auto: true, verbose: false },
   sarimax: { p: 1, d: 0, q: 1, transpose: true, verbose: false },
 };
 
@@ -28,14 +28,25 @@ async function fetchProductsWithOrders(userId) {
   });
 }
 
-function runForecast(products, modelConfig, forecastLength = foreseeDates) {
-  const arima = new ARIMA(modelConfig);
-  return products.map((product) => {
-    const ts = product.order.map((e) => e.quantity);
-    arima.train(ts);
-    const [pred] = arima.predict(forecastLength);
-    return { ...product, expect: pred };
-  });
+async function getForecast(
+  products,
+  modelConfig,
+  forecastLength = foreseeDates
+) {
+  const results = await Promise.all(
+    products.map(async (product) => {
+      const pred = await prisma.predictData.findUnique({
+        where: { ProductId: parseInt(product.productId) },
+      });
+
+      return {
+        ...product,
+        expect: pred?.predictedValues || [],
+      };
+    })
+  );
+
+  return results;
 }
 
 module.exports.authenticate = async (req, res, next) => {
@@ -65,8 +76,10 @@ module.exports.authenticate = async (req, res, next) => {
 };
 
 module.exports.getProductData = async (req, res, next) => {
+  const { UserId } = req.authData;
+
   try {
-    let products = await fetchProductsWithOrders(1);
+    let products = await fetchProductsWithOrders(parseInt(UserId));
 
     // 1. Combine same-day orders into one record per product
     products = products.map((product) => {
@@ -114,7 +127,7 @@ module.exports.getProductData = async (req, res, next) => {
     });
 
     // 4. Run forecast
-    const forecasted = runForecast(products, models["arima"]);
+    const forecasted = await getForecast(products, models["auto"]);
     res.json(forecasted);
   } catch (error) {
     next(error);
@@ -168,8 +181,9 @@ module.exports.putProductData = async (req, res, next) => {
 module.exports.getInventory = async (req, res, next) => {
   const userId = parseInt(req.params?.userId);
   try {
-    const products = await fetchProductsWithOrders(userId ? userId : 1);
-    res.json(products);
+    const products = await fetchProductsWithOrders(userId);
+    const categories = await prisma.category.findMany({});
+    res.json({ products: products, categories: categories });
   } catch (error) {
     console.log(error);
     next(error);

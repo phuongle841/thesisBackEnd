@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "dev": "NODE_ENV=development && node --watch app.js",
-    "test": "NODE_ENV=test && jest --testTimeout=5000 --detectOpenHandles"
+    "test": "NODE_ENV=test && jest --testTimeout=5000 --detectOpenHandles",
+    "updateAndReseed": "npx prisma db push --force-reset && npx prisma db seed"
   },
   "prisma": {
-    "seed": "node prisma/seed.js",
-    "updateAndReseed": "npx prisma db push --force-reset && npx prisma db seed"
+    "seed": "node prisma/seed.js"
   },
   "keywords": [],
   "author": "",
@@ -24,7 +24,8 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "node-cron": "^4.2.1"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.5.1",

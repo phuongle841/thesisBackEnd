@@ -22,13 +22,19 @@ module.exports.getOrder = async (req, res, next) => {
   try {
     const orders = await prisma.order.findMany({
       where: { UserId: userId },
-      include: { Product: true },
       take,
       skip,
       orderBy: { orderDate: "desc" },
+      include: { Product: true },
     });
-    const count = await prisma.order.count();
-    res.send({ orders: orders, count });
+    const { _count } = await prisma.user.findUnique({
+      where: { userId: userId },
+      select: {
+        _count: { select: { Order: true } },
+      },
+    });
+
+    res.send({ orders: orders, count: _count });
   } catch (error) {
     console.error("Error fetching orders:", error);
     next(error);
@@ -63,7 +69,7 @@ module.exports.postOrders = async (req, res, next) => {
     return {
       UserId: userId,
       ProductId: e.recordProduct.productId,
-      quantity: e.quantity,
+      quantity: parseInt(e.quantity),
     };
   });
   try {
@@ -71,6 +77,9 @@ module.exports.postOrders = async (req, res, next) => {
       data: orderRecords,
     });
 
+    const deletedCart = await prisma.cartRecord.deleteMany({
+      where: { Cart: { user: { userId: userId } } },
+    });
     res.json({ message: "order success" });
   } catch (error) {
     next(error);

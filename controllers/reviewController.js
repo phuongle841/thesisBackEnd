@@ -53,11 +53,9 @@ module.exports.putReview = async (req, res, next) => {
 module.exports.postReview = async (req, res, next) => {
   const { reviewTitle, reviewDescription, reviewRating, productId } = req.body;
 
-  console.log(req.authData);
-
   try {
     const { user } = await prisma.userCredentials.findUnique({
-      where: { userEmail: req.authData.user.userEmail },
+      where: { userEmail: req.authData.userEmail },
       select: { user: true },
     });
     const review = await prisma.review.create({

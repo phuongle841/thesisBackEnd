@@ -24,11 +24,17 @@ module.exports.signup = async (req, res, next) => {
       create: { userId },
     });
 
-    const newLocation = await prisma.location.create({
-      data: { userId, address: "" },
-    });
+    //const newLocation = await prisma.location.create({
+    //data: { userId, address: "" },
+    //});
 
-    res.status(201).json({ message: "User registered" });
+    jwt.sign(
+      { UserId: userId, userEmail: email },
+      process.env.secretKey,
+      (err, token) => {
+        res.json({ token, UserId: userId });
+      }
+    );
   } catch (error) {
     console.log(error);
     next(error);
