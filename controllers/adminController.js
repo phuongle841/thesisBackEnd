@@ -6,8 +6,7 @@ const { startOfDay } = require("date-fns");
 const prisma = new PrismaClient();
 const ARIMA = require("arima");
 
-const take = 20;
-const skip = 0;
+const defaultValues = { take: 10, skip: 0 };
 
 const models = {
   arima: { p: 1, d: 0, q: 1, verbose: false },
@@ -17,6 +16,7 @@ const models = {
 };
 
 const foreseeDates = 3;
+const { updateSnapShot } = require("../schedulers/updateSnapShot");
 
 async function fetchProductsWithOrders(userId) {
   return prisma.product.findMany({
@@ -25,6 +25,7 @@ async function fetchProductsWithOrders(userId) {
       order: { select: { quantity: true, orderDate: true } },
       Category: true,
     },
+    orderBy: { productId: "asc" },
   });
 }
 
@@ -127,6 +128,67 @@ module.exports.getProductData = async (req, res, next) => {
     });
 
     // 4. Run forecast
+    // await updateSnapShot();
+    const forecasted = await getForecast(products, models["auto"]);
+    res.json(forecasted);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.getUpdatedProductData = async (req, res, next) => {
+  const { UserId } = req.authData;
+
+  try {
+    let products = await fetchProductsWithOrders(parseInt(UserId));
+
+    // 1. Combine same-day orders into one record per product
+    products = products.map((product) => {
+      const groupedOrders = {};
+
+      product.order.forEach(({ quantity, orderDate }) => {
+        const day = startOfDay(new Date(orderDate)).toISOString();
+
+        if (!groupedOrders[day]) {
+          groupedOrders[day] = 0;
+        }
+        groupedOrders[day] += quantity ?? 0;
+      });
+
+      // Turn the grouped object into sorted array
+      const aggregatedOrders = Object.entries(groupedOrders)
+        .map(([date, totalQuantity]) => ({
+          orderDate: new Date(date),
+          quantity: totalQuantity,
+        }))
+        .sort((a, b) => a.orderDate - b.orderDate);
+
+      return { ...product, order: aggregatedOrders };
+    });
+
+    // 2. Find the longest order array (for filling gaps)
+    let longestOrderArray = products.reduce((longest, product) => {
+      return product.order.length > longest.length ? product.order : longest;
+    }, []);
+    let maxLength = longestOrderArray.length;
+
+    // 3. Fill in missing dates with null quantity
+    products = products.map((product) => {
+      let order = [...product.order];
+
+      // Fill in the gaps with matching dates
+      while (order.length < maxLength) {
+        const missingIndex = order.length;
+        const dateFromLongest = longestOrderArray[missingIndex].orderDate;
+
+        order.push({ orderDate: dateFromLongest, quantity: null });
+      }
+
+      return { ...product, order };
+    });
+
+    // 4. Run forecast
+    await updateSnapShot();
     const forecasted = await getForecast(products, models["auto"]);
     res.json(forecasted);
   } catch (error) {
@@ -190,17 +252,45 @@ module.exports.getInventory = async (req, res, next) => {
   }
 };
 
+module.exports.putInventory = async (req, res, next) => {
+  const { productId, productImages, productName, productPrice, inStock } =
+    req.body.data;
+  const updateData = { productImages, productName, productPrice, inStock };
+
+  try {
+    const result = await prisma.product.update({
+      where: { productId },
+      data: updateData,
+    });
+    res.json({ message: "Working" });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
 module.exports.getOrders = async (req, res, next) => {
   const userId = parseInt(req.params?.userId);
-  const currentTake = parseInt(req.params?.take);
 
+  const take = parseInt(req.query.take, 10) || defaultValues.take;
+  const skip = parseInt(req.query.skip, 10) || defaultValues.skip;
   try {
     const order = await prisma.order.findMany({
       where: { Product: { owner: { userId } } },
-      take: currentTake ? currentTake : take,
-      include: { Product: true },
+      take,
+      skip,
+      include: { Product: true, orderUser: { include: { Location: true } } },
+      orderBy: { orderId: "desc" },
     });
-    res.json(order);
+
+    const { _count } = await prisma.user.findUnique({
+      where: { userId: userId },
+      select: {
+        _count: { select: { Order: true } },
+      },
+    });
+
+    res.json({ orders: order, count: _count });
   } catch (error) {
     console.log(error);
     next(error);

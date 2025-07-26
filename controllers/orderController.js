@@ -24,7 +24,7 @@ module.exports.getOrder = async (req, res, next) => {
       where: { UserId: userId },
       take,
       skip,
-      orderBy: { orderDate: "desc" },
+      orderBy: { orderId: "desc" },
       include: { Product: true },
     });
     const { _count } = await prisma.user.findUnique({

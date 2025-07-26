@@ -40,16 +40,19 @@ module.exports.getProductsByCategory = async (req, res, next) => {
   }
 };
 module.exports.postProducts = async (req, res, next) => {
-  const {
-    productName,
-    productImages,
-    productRating,
-    productPrice,
-    productDescription,
-    productDetails,
-  } = req.body;
-  productRating = 5;
   try {
+    const {
+      productName,
+      productImages,
+      productPrice,
+      productDescription,
+      productDetails,
+      inStock,
+      Category,
+    } = req.body;
+
+    const userId = parseInt(req.authData.UserId);
+
     let result = await prisma.product.create({
       data: {
         productName: productName,
@@ -58,8 +61,13 @@ module.exports.postProducts = async (req, res, next) => {
         productPrice: productPrice,
         productDescription: productDescription,
         productDetails: productDetails,
+        inStock: inStock,
+        owner: { connect: { userId: userId } },
+        Category: { connect: [{ categoryId: 1 }, { categoryId: 2 }] },
       },
     });
+    Category.forEach((categoryId) => {});
+
     res.send(result);
   } catch (error) {
     res.sendStatus(404);

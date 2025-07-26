@@ -59,6 +59,7 @@ module.exports.getUserOrders = async (req, res, next) => {
   try {
     const orders = await prisma.order.findMany({
       where: { owner: { userId: parseInt(userId) } },
+      orderBy: { orderId: "desc" },
     });
     res.send(orders);
   } catch (error) {

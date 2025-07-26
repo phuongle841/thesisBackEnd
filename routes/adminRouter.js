@@ -8,12 +8,22 @@ const verifyToken = require("../middlewares/verifyToken");
 adminRouter.get("/authenticate", verifyToken, adminController.authenticate);
 
 adminRouter.get("/:userId", verifyToken, adminController.getProductData);
+adminRouter.get(
+  "/:userId/update",
+  verifyToken,
+  adminController.getUpdatedProductData
+);
 adminRouter.put("/:userId", adminController.putProductData);
 
 adminRouter.get(
   "/:userId/inventory",
   verifyToken,
   adminController.getInventory
+);
+adminRouter.put(
+  "/:userId/inventory",
+  verifyToken,
+  adminController.putInventory
 );
 
 adminRouter.get("/:userId/orders", verifyToken, adminController.getOrders);
