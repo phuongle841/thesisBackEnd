@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "NODE_ENV=development && node --watch app.js",
+    "dev": "node --watch app.js",
+    "devWithENV": "NODE_ENV=development && node --watch app.js",
     "test": "NODE_ENV=test && jest --testTimeout=5000 --detectOpenHandles",
     "updateAndReseed": "npx prisma db push --force-reset && npx prisma db seed"
   },

@@ -6,6 +6,12 @@ Shopping web application with predicting techniques
 
 - My supervisor and the committee at school
 
+## Requirements
+
+- Postgresql server install
+- Have superuser and password for postgres (or user default account:postgres, password:windows login pass when start computer)
+- Node installed
+
 ## Installation
 
 Install my-project:
@@ -24,6 +30,8 @@ Step 2: git clone back-end and install dependencies
   git clone git@github.com:phuongle841/thesisBackEnd.git
   cd thesisBackEnd
   npm install
+  # install prisma
+  npm install prisma --save-dev
 ```
 
 Step 3: create .env file
@@ -34,7 +42,7 @@ Step 3: create .env file
   cd ../
 ```
 
-In this .env file need these information:
+In this .env file need these information and change super user information accordingly for your system in DATABASE_URL and TEST_DATABASE_URL:
 
 ```bash
   PORT=3000
@@ -48,9 +56,17 @@ In this .env file need these information:
   saltRounds = 10
   secretKey = "secretKey"
 
-  DATABASE_URL="postgresql://leminhphuong:leminhphuong@localhost:5432/SmartShoppingApp?schema=public"
-  TEST_DATABASE_URL="postgresql://leminhphuong:leminhphuong@localhost:5432/test_SmartShoppingApp?schema=public"
+  DATABASE_URL="postgresql://<superuser-account>:<superuser-password>@localhost:5432/SmartShoppingApp?schema=public"
+  TEST_DATABASE_URL="postgresql://:<superuser-account><superuser-password>@localhost:5432/test_SmartShoppingApp?schema=public"
 
+```
+
+Step 3: Connect prisma to postgres and seeding database
+
+```bash
+  npm run updateAndReseed
+  # exit back-end directory
+  cd ../
 ```
 
 Step 3: git clone front-end user and install dependencies
