@@ -61,7 +61,7 @@ In this .env file need these information and change super user information accor
 
 ```
 
-Step 3: Connect prisma to postgres and seeding database
+Step 4: Connect prisma to postgres and seeding database
 
 ```bash
   npm run updateAndReseed
@@ -79,7 +79,7 @@ Step 3: git clone front-end user and install dependencies
   cd ../
 ```
 
-Step 3: git clone front-end admin and install dependencies
+Step 5: git clone front-end admin and install dependencies
 
 ```bash
   # clone front-end admin
