@@ -1,6 +1,20 @@
-# Project Title
+## Project Title
 
 Shopping web application with predicting techniques
+
+## Front-end Github's links
+
+- User interface:
+
+```bash
+    git@github.com:phuongle841/thesisFrontEnd_User.git
+```
+
+- Admin interface:
+
+```bash
+    git@github.com:phuongle841/thesisFrontEnd_Admin.git
+```
 
 ## Acknowledgements
 
@@ -69,7 +83,7 @@ Step 4: Connect prisma to postgres and seeding database
   cd ../
 ```
 
-Step 3: git clone front-end user and install dependencies
+Step 5: git clone front-end user and install dependencies
 
 ```bash
   # clone front-end user
@@ -79,7 +93,7 @@ Step 3: git clone front-end user and install dependencies
   cd ../
 ```
 
-Step 5: git clone front-end admin and install dependencies
+Step 6: git clone front-end admin and install dependencies
 
 ```bash
   # clone front-end admin
