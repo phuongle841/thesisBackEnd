@@ -7,13 +7,13 @@ Shopping web application with predicting techniques
 - User interface:
 
 ```bash
-    git@github.com:phuongle841/thesisFrontEnd_User.git
+    https://github.com/phuongle841/thesisFrontEnd_User
 ```
 
 - Admin interface:
 
 ```bash
-    git@github.com:phuongle841/thesisFrontEnd_Admin.git
+    https://github.com/phuongle841/thesisFrontEnd_Admin
 ```
 
 ## Acknowledgements
